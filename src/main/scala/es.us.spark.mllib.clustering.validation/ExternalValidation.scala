@@ -1,14 +1,67 @@
 package es.us.spark.mllib.clustering.validation
 
+import java.util.NoSuchElementException
+
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.functions._
+import org.apache.spark.sql.types.{DoubleType, IntegerType, StructField, StructType}
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 
+class ExternalValidation(_entropy: Double, _purity: Double, _mutualInformation: Double, _fMeasure: Double, _variationOfInformation: Double, _goodmanKruskal: Double, _randIndex: Double, _adjustedRandIndex: Double, _jaccard: Double, _fowlkesMallows: Double, _hubert: Double, _minkoski: Double) extends Serializable {
+  def entropy = _entropy
+
+  def purity = _purity
+
+  def mutualInformation = _mutualInformation
+
+  def fMeasure = _fMeasure
+
+  def variationOfInformation = _variationOfInformation
+
+  def goodmanKruskal = _goodmanKruskal
+
+  def randIndex = _randIndex
+
+  def adjustedRandIndex = _adjustedRandIndex
+
+  def jaccard = _jaccard
+
+  def fowlkesMallows = _fowlkesMallows
+
+  def hubert = _hubert
+
+  def minkoski = _minkoski
+
+
+  override def toString: String = s"$entropy\t$purity\t$mutualInformation\t$fMeasure\t$variationOfInformation\t$goodmanKruskal\t$randIndex\t$adjustedRandIndex\t$jaccard\t$fowlkesMallows\t$hubert\t$minkoski"
+}
 
 /**
   * Created by Josem on 27/09/2017.
   */
 object ExternalValidation extends Logging {
+
+  /**
+    * Calculate all the external validation indices for the given dataframe and returns an ExternalValidation object with its values
+    *
+    * @param dfClusteringResult Clustering Result
+    * @example calculateExternalIndices(kmeansResults)
+    */
+  def calculateExternalIndices(dfClusteringResult: DataFrame): ExternalValidation = {
+    new ExternalValidation(getEntropy(dfClusteringResult),
+      getPurity(dfClusteringResult),
+      getMutualInformation(dfClusteringResult),
+      getFMeasure(dfClusteringResult),
+      getVariationOfInformation(dfClusteringResult),
+      getGoodmanKruskal(dfClusteringResult),
+      getRandIndex(dfClusteringResult),
+      getAdjustedRandIndex(dfClusteringResult),
+      getJaccard(dfClusteringResult),
+      getFowlkesMallows(dfClusteringResult),
+      getHubert(dfClusteringResult),
+      getMinkowski(dfClusteringResult))
+  }
+
 
   /**
     * Returns the entropy of a clustering results given the clustering result and the number of clusters
@@ -21,6 +74,8 @@ object ExternalValidation extends Logging {
 
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
+
+    logInfo("Calculating Entropy")
 
     val totalElements = getTotalElements(dfClusteringResult)
     val bcTotalElements = spark.sparkContext.broadcast(totalElements)
@@ -53,6 +108,8 @@ object ExternalValidation extends Logging {
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
 
+    logInfo("Calculating Purity")
+
     val totalElements = getTotalElements(dfClusteringResult)
     val bcTotalElements = spark.sparkContext.broadcast(totalElements)
 
@@ -81,6 +138,8 @@ object ExternalValidation extends Logging {
 
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
+
+    logInfo("Calculating Mutual Information")
 
     val totalElements = getTotalElements(dfClusteringResult)
     val bcTotalElements = spark.sparkContext.broadcast(totalElements)
@@ -115,6 +174,8 @@ object ExternalValidation extends Logging {
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
 
+    logInfo("Calculating F-Measure")
+
     val columnsSum = getSumColumns(dfClusteringResult)
     val bcColumnsSum = spark.sparkContext.broadcast(columnsSum)
 
@@ -124,8 +185,8 @@ object ExternalValidation extends Logging {
 
       val mutualInformationSeq = for (i <- 0 until row.size) yield {
         val cellValue = row.getDouble(i) / totalRow
-
-        (2 * (cellValue / totalRow) * (cellValue / bcColumnsSum.value.apply(i))) / ((cellValue / totalRow) + (cellValue / bcColumnsSum.value.apply(i)))
+        //If cellValue is zero log(0) is set to zero
+        if (cellValue != 0) (2 * (cellValue / totalRow) * (cellValue / bcColumnsSum.value.apply(i))) / ((cellValue / totalRow) + (cellValue / bcColumnsSum.value.apply(i))) else 0.0
       }
 
       mutualInformationSeq.max
@@ -144,6 +205,8 @@ object ExternalValidation extends Logging {
 
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
+
+    logInfo("Calculating Variation of Information")
 
     val totalElements = getTotalElements(dfClusteringResult)
     val bcTotalElements = spark.sparkContext.broadcast(totalElements)
@@ -194,6 +257,8 @@ object ExternalValidation extends Logging {
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
 
+    logInfo("Calculating Goodman-Kruskal")
+
     val totalElements = getTotalElements(dfClusteringResult)
     val bcTotalElements = spark.sparkContext.broadcast(totalElements)
 
@@ -222,6 +287,8 @@ object ExternalValidation extends Logging {
 
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
+
+    logInfo("Calculating Rand Index")
 
     val totalElements = getTotalElements(dfClusteringResult)
 
@@ -271,6 +338,8 @@ object ExternalValidation extends Logging {
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
 
+    logInfo("Calculating Adjusted Rand index")
+
     val totalElements = getTotalElements(dfClusteringResult)
 
     val columnsSum = getSumColumns(dfClusteringResult)
@@ -319,6 +388,8 @@ object ExternalValidation extends Logging {
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
 
+    logInfo("Calculating Jaccard")
+
     val columnsSum = getSumColumns(dfClusteringResult)
     val bcColumnsSum = spark.sparkContext.broadcast(columnsSum)
 
@@ -365,6 +436,8 @@ object ExternalValidation extends Logging {
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
 
+    logInfo("Calculating Fowlkes Mallows")
+
     val columnsSum = getSumColumns(dfClusteringResult)
     val bcColumnsSum = spark.sparkContext.broadcast(columnsSum)
 
@@ -409,6 +482,8 @@ object ExternalValidation extends Logging {
 
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
+
+    logInfo("Calculating Hubert")
 
     val totalElements = getTotalElements(dfClusteringResult)
 
@@ -457,6 +532,8 @@ object ExternalValidation extends Logging {
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
 
+    logInfo("Calculating Minkowski")
+
     val columnsSum = getSumColumns(dfClusteringResult)
     val bcColumnsSum = spark.sparkContext.broadcast(columnsSum)
 
@@ -498,6 +575,7 @@ object ExternalValidation extends Logging {
     * @param row The Row which values are going to be sum
     * @example getRowSum(rowExample)
     */
+
   def getSumRow(row: Row): Double = {
 
     val a = for (i <- 0 until row.size) yield {
@@ -575,5 +653,71 @@ object ExternalValidation extends Logging {
     (number * (number - 1)) / 2
   }
 
+  /**
+    * Returns contingency matrix
+    *
+    * @param dfClusteringResult Dataframe with the assigned cluster and the class to which belongs
+    * @example getContingencyMatrix(kmeansResult)
+    */
+  def getContingencyMatrix(dfClusteringResult: DataFrame, numClusters: Int): DataFrame = {
+    val list_feature = dfClusteringResult.select("class")
+      .distinct()
+      .rdd.map(r => r(0).toString).collect()
+
+    val dfTotal = dfClusteringResult.groupBy("prediction", "class")
+      .count()
+    val dfTotalClusters = dfTotal
+      .withColumn("count", dfTotal("count").cast(DoubleType))
+      .cache()
+
+    //    println("dfTotalClusters")
+    //    dfTotalClusters.show()
+
+    val rows = list_feature.map { feature =>
+
+      val columna = for (cluster <- 0 until numClusters) yield {
+
+        val clusterRatio = try {
+          dfTotalClusters.select("count")
+            .where(s"prediction == '$cluster'")
+            .where(s"class == '$feature'")
+            .first()
+            .getDouble(0)
+        } catch {
+          case ex: NoSuchElementException => {
+            0.0
+          }
+        }
+
+        (cluster, clusterRatio)
+      }
+
+      dfTotalClusters.unpersist()
+
+      val spark = SparkSession.builder().getOrCreate()
+
+
+      val schema = Array(
+        StructField("prediction", IntegerType, true),
+        StructField(s"$feature", DoubleType, true))
+
+      val customSchema = StructType(schema)
+
+      val columnaRDD = spark.sparkContext.parallelize(columna)
+      val filas = columnaRDD.map(Row.fromTuple(_))
+
+      logInfo(s"\tValue: $feature DONE!")
+
+      spark.createDataFrame(filas, customSchema)
+
+    }
+
+    dfTotalClusters.unpersist()
+
+    rows.reduce(_.join(_, "prediction")).sort("prediction")
+  }
+
 
 }
+
+
