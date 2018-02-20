@@ -45,7 +45,7 @@ object MainTest {
     //val df = spark.sparkContext.parallelize(Seq((80, 0, 20), (10, 80, 10), (0, 0, 100))).toDF("A", "B", "C")
     //val df = spark.sparkContext.parallelize(Seq((60, 54, 46, 41), (40, 44, 53, 57))).toDF("A", "B", "C", "D")
 
-    val df = spark.sparkContext.parallelize(Seq((7.0, 0.0, 0.0), (0.0, 1.0, 3.0))).toDF("A", "B", "C")
+    val df = spark.sparkContext.parallelize(Seq((1000.0, 0.0, 0.0), (0.0, 1000.0, 0.0), (0.0, 0.0, 1000.0))).toDF("A", "B", "C")
 
     println("ENTROPY:")
     val entropy = ExternalValidation.getEntropy(df)
@@ -94,6 +94,8 @@ object MainTest {
     println("MINKOWSKI:")
     val minkowski = ExternalValidation.getMinkowski(df)
     println(minkowski)
+
+    println(ExternalValidation.combina2(3))
 
 
   }

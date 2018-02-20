@@ -153,12 +153,15 @@ object ExternalValidation extends Logging {
 
       val mutualInformationSeq = for (i <- 0 until row.size) yield {
         val cellValue = row.getDouble(i) / totalRow
+        val pi = (totalRow / bcTotalElements.value)
+        val pj = (bcColumnsSum.value.apply(i) / bcTotalElements.value)
+        //println(s"$cellValue * math.log10($cellValue / ($pi * $pj))")
+
         //If cellValue is zero log(0) is set to zero
-        if (cellValue != 0) cellValue * math.log(cellValue / ((totalRow / bcTotalElements.value) * (bcColumnsSum.value.apply(i) / bcTotalElements.value))) else 0.0
+        if (cellValue != 0) cellValue * math.log10(cellValue / (pi * pj)) else 0.0
+
       }
-
       mutualInformationSeq.sum
-
     }.reduce(_ + _)
 
   }
@@ -176,6 +179,9 @@ object ExternalValidation extends Logging {
 
     logInfo("Calculating F-Measure")
 
+    val totalElements = getTotalElements(dfClusteringResult)
+    val bcTotalElements = spark.sparkContext.broadcast(totalElements)
+
     val columnsSum = getSumColumns(dfClusteringResult)
     val bcColumnsSum = spark.sparkContext.broadcast(columnsSum)
 
@@ -185,8 +191,10 @@ object ExternalValidation extends Logging {
 
       val mutualInformationSeq = for (i <- 0 until row.size) yield {
         val cellValue = row.getDouble(i) / totalRow
+        val pi = (totalRow / bcTotalElements.value)
+        val pj = (bcColumnsSum.value.apply(i) / bcTotalElements.value)
         //If cellValue is zero log(0) is set to zero
-        if (cellValue != 0) (2 * (cellValue / totalRow) * (cellValue / bcColumnsSum.value.apply(i))) / ((cellValue / totalRow) + (cellValue / bcColumnsSum.value.apply(i))) else 0.0
+        if (cellValue != 0) 2 * ((cellValue / pi) * (cellValue / pj)) / ((cellValue / pi) + (cellValue / pj)) else 0.0
       }
 
       mutualInformationSeq.max
@@ -217,14 +225,17 @@ object ExternalValidation extends Logging {
 
     val firstValue = dfClusteringResult.map { row =>
       val totalRow = getSumRow(row)
+      val pi = (totalRow / bcTotalElements.value)
 
-      (totalRow / bcTotalElements.value) * math.log(totalRow / bcTotalElements.value)
+      pi * math.log10(pi)
 
     }.reduce(_ + _)
 
     val secondValueSeq = for (i <- dfClusteringResult.columns.indices) yield {
 
-      (bcColumnsSum.value.apply(i) / bcTotalElements.value) * math.log(bcColumnsSum.value.apply(i) / bcTotalElements.value)
+      val pj = (bcColumnsSum.value.apply(i) / bcTotalElements.value)
+
+      pj * math.log10(pj)
 
     }
     val secondValue = secondValueSeq.sum
@@ -234,8 +245,10 @@ object ExternalValidation extends Logging {
 
       val variationOfInformationSeq = for (i <- 0 until row.size) yield {
         val cellValue = row.getDouble(i) / totalRow
+        val pi = (totalRow / bcTotalElements.value)
+        val pj = (bcColumnsSum.value.apply(i) / bcTotalElements.value)
         //If cellValue is zero log(0) is set to zero
-        if (cellValue != 0) cellValue * math.log(cellValue / ((totalRow / bcTotalElements.value) * (bcColumnsSum.value.apply(i) / bcTotalElements.value))) else 0.0
+        if (cellValue != 0) cellValue * math.log10(cellValue / (pi * pj)) else 0.0
       }
 
       variationOfInformationSeq.sum
@@ -444,13 +457,13 @@ object ExternalValidation extends Logging {
     val firstValue = dfClusteringResult.map { row =>
       val totalRow = getSumRow(row)
 
-      val variationOfInformationSeq = for (i <- 0 until row.size) yield {
+      val fowlkesSeq = for (i <- 0 until row.size) yield {
         val cellValue = row.getDouble(i) / totalRow
 
         combina2(cellValue)
       }
 
-      variationOfInformationSeq.sum
+      fowlkesSeq.sum
 
     }.reduce(_ + _)
 
@@ -540,13 +553,13 @@ object ExternalValidation extends Logging {
     val firstValue = dfClusteringResult.map { row =>
       val totalRow = getSumRow(row)
 
-      val variationOfInformationSeq = for (i <- 0 until row.size) yield {
+      val minkowskiSeq = for (i <- 0 until row.size) yield {
         val cellValue = row.getDouble(i) / totalRow
 
         combina2(cellValue)
       }
 
-      variationOfInformationSeq.sum
+      minkowskiSeq.sum
 
     }.reduce(_ + _)
 
