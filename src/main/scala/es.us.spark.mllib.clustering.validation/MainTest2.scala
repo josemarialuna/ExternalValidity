@@ -24,19 +24,15 @@ object MainTest2 {
 
 
     val susyFile = "C:\\datasets\\Validation\\SUSY.csv"
+    val higgsFile = "C:\\datasets\\Validation\\HIGGS\\HIGGS.csv"
 
-    val destino: String = Utils.whatTimeIsIt() + "susyFile"
-    val numIterations = 1000
-    val minClusters = 2
-    val maxClusters = 10
-    val origen = susyFile
-    val idIndex = -1
-    val classIndex = 0
+    val destino: String = Utils.whatTimeIsIt() + "-higgs200k"
+    val origen = higgsFile
     val delimiter = ","
 
     val dataRead = spark.read
       .option("header", "false")
-      .option("inferSchema", "false")
+      .option("inferSchema", "true")
       .option("delimiter", delimiter)
       .csv(origen)
 
@@ -44,11 +40,11 @@ object MainTest2 {
 
 
     println("Saving results..")
-    dataRead.limit(100)
+    dataRead.limit(200000)
       .write
       .option("header", "false")
       .option("delimiter", delimiter)
-      .csv(s"SUSY_limited2")
+      .csv(s"$destino")
 
   }
 

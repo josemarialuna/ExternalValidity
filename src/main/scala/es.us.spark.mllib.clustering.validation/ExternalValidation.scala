@@ -4,33 +4,33 @@ import java.util.NoSuchElementException
 
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.functions._
-import org.apache.spark.sql.types.{DoubleType, IntegerType, StructField, StructType}
+import org.apache.spark.sql.types.{IntegerType, LongType, StructField, StructType}
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 
 class ExternalValidation(_entropy: Double, _purity: Double, _mutualInformation: Double, _fMeasure: Double, _variationOfInformation: Double, _goodmanKruskal: Double, _randIndex: Double, _adjustedRandIndex: Double, _jaccard: Double, _fowlkesMallows: Double, _hubert: Double, _minkoski: Double) extends Serializable {
-  def entropy = _entropy
+  def entropy: Double = _entropy
 
-  def purity = _purity
+  def purity: Double = _purity
 
-  def mutualInformation = _mutualInformation
+  def mutualInformation: Double = _mutualInformation
 
-  def fMeasure = _fMeasure
+  def fMeasure: Double = _fMeasure
 
-  def variationOfInformation = _variationOfInformation
+  def variationOfInformation: Double = _variationOfInformation
 
-  def goodmanKruskal = _goodmanKruskal
+  def goodmanKruskal: Double = _goodmanKruskal
 
-  def randIndex = _randIndex
+  def randIndex: Double = _randIndex
 
-  def adjustedRandIndex = _adjustedRandIndex
+  def adjustedRandIndex: Double = _adjustedRandIndex
 
-  def jaccard = _jaccard
+  def jaccard: Double = _jaccard
 
-  def fowlkesMallows = _fowlkesMallows
+  def fowlkesMallows: Double = _fowlkesMallows
 
-  def hubert = _hubert
+  def hubert: Double = _hubert
 
-  def minkoski = _minkoski
+  def minkoski: Double = _minkoski
 
 
   override def toString: String = s"$entropy\t$purity\t$mutualInformation\t$fMeasure\t$variationOfInformation\t$goodmanKruskal\t$randIndex\t$adjustedRandIndex\t$jaccard\t$fowlkesMallows\t$hubert\t$minkoski"
@@ -78,15 +78,17 @@ object ExternalValidation extends Logging {
     logInfo("Calculating Entropy")
 
     val totalElements = getTotalElements(dfClusteringResult)
-    val bcTotalElements = spark.sparkContext.broadcast(totalElements)
+    val bcTotalElements = spark.sparkContext.broadcast(totalElements.doubleValue())
 
-    dfClusteringResult.map { row =>
+    val entropy = dfClusteringResult.map { row =>
       val totalRow = getSumRow(row)
 
       val rowEntropySeq = for (i <- 0 until row.size) yield {
-        val cellValue = row.getDouble(i) / totalRow
+        val cellValue = row.getLong(i) / bcTotalElements.value.doubleValue()
+        val pi = totalRow.doubleValue() / bcTotalElements.value
+
         //If cellValue is zero log(0) is set to zero
-        if (cellValue != 0) cellValue * log2(cellValue) else 0.0
+        if (cellValue != 0) (cellValue / pi) * log2(cellValue / pi) else 0.0
       }
 
       val rowEntropy = -rowEntropySeq.sum
@@ -94,6 +96,8 @@ object ExternalValidation extends Logging {
       (totalRow / bcTotalElements.value) * rowEntropy
 
     }.reduce(_ + _)
+
+    -entropy
 
   }
 
@@ -111,13 +115,13 @@ object ExternalValidation extends Logging {
     logInfo("Calculating Purity")
 
     val totalElements = getTotalElements(dfClusteringResult)
-    val bcTotalElements = spark.sparkContext.broadcast(totalElements)
+    val bcTotalElements = spark.sparkContext.broadcast(totalElements.doubleValue())
 
     dfClusteringResult.map { row =>
       val totalRow = getSumRow(row)
 
       val rowPuritySeq = for (i <- 0 until row.size) yield {
-        row.getDouble(i) / totalRow
+        row.getLong(i) / totalRow.doubleValue()
       }
 
       val rowPurity = rowPuritySeq.max
@@ -142,26 +146,25 @@ object ExternalValidation extends Logging {
     logInfo("Calculating Mutual Information")
 
     val totalElements = getTotalElements(dfClusteringResult)
-    val bcTotalElements = spark.sparkContext.broadcast(totalElements)
+    val bcTotalElements = spark.sparkContext.broadcast(totalElements.doubleValue())
 
     val columnsSum = getSumColumns(dfClusteringResult)
     val bcColumnsSum = spark.sparkContext.broadcast(columnsSum)
 
-
     dfClusteringResult.map { row =>
       val totalRow = getSumRow(row)
 
-      val mutualInformationSeq = for (i <- 0 until row.size) yield {
-        val cellValue = row.getDouble(i) / totalRow
-        val pi = (totalRow / bcTotalElements.value)
-        val pj = (bcColumnsSum.value.apply(i) / bcTotalElements.value)
-        //println(s"$cellValue * math.log10($cellValue / ($pi * $pj))")
+      val variationOfInformationSeq = for (i <- 0 until row.size) yield {
+        val cellValue = row.getLong(i) / bcTotalElements.value
+        val pi = totalRow / bcTotalElements.value
+        val pj = bcColumnsSum.value.apply(i) / bcTotalElements.value
 
         //If cellValue is zero log(0) is set to zero
-        if (cellValue != 0) cellValue * math.log10(cellValue / (pi * pj)) else 0.0
-
+        if (cellValue != 0) cellValue * log2(cellValue / (pi * pj)) else 0.0
       }
-      mutualInformationSeq.sum
+
+      variationOfInformationSeq.sum
+
     }.reduce(_ + _)
 
   }
@@ -180,27 +183,31 @@ object ExternalValidation extends Logging {
     logInfo("Calculating F-Measure")
 
     val totalElements = getTotalElements(dfClusteringResult)
-    val bcTotalElements = spark.sparkContext.broadcast(totalElements)
+    val bcTotalElements = spark.sparkContext.broadcast(totalElements.doubleValue())
 
     val columnsSum = getSumColumns(dfClusteringResult)
     val bcColumnsSum = spark.sparkContext.broadcast(columnsSum)
 
+    val secondValueSeq = for (i <- dfClusteringResult.columns.indices) yield {
 
-    dfClusteringResult.map { row =>
-      val totalRow = getSumRow(row)
+      val pj = bcColumnsSum.value.apply(i) / bcTotalElements.value
+      val bc_pj = spark.sparkContext.broadcast(pj)
 
-      val mutualInformationSeq = for (i <- 0 until row.size) yield {
-        val cellValue = row.getDouble(i) / totalRow
-        val pi = (totalRow / bcTotalElements.value)
-        val pj = (bcColumnsSum.value.apply(i) / bcTotalElements.value)
+      val maxValue = dfClusteringResult.map { row =>
+        val totalRow = getSumRow(row)
+        val pi = totalRow / bcTotalElements.value
+        val pij = row.getLong(i) / bcTotalElements.value
+
         //If cellValue is zero log(0) is set to zero
-        if (cellValue != 0) 2 * ((cellValue / pi) * (cellValue / pj)) / ((cellValue / pi) + (cellValue / pj)) else 0.0
-      }
+        if (pij != 0) 2 * ((pij / pi) * (pij / bc_pj.value)) / ((pij / pi) + (pij / bc_pj.value)) else 0.0
+      }.collect().max
 
-      mutualInformationSeq.max
+      pj * maxValue
 
-    }.reduce(_ + _)
+    }
+    val fmeasure = secondValueSeq.sum
 
+    fmeasure
   }
 
   /**
@@ -217,7 +224,7 @@ object ExternalValidation extends Logging {
     logInfo("Calculating Variation of Information")
 
     val totalElements = getTotalElements(dfClusteringResult)
-    val bcTotalElements = spark.sparkContext.broadcast(totalElements)
+    val bcTotalElements = spark.sparkContext.broadcast(totalElements.doubleValue())
 
     val columnsSum = getSumColumns(dfClusteringResult)
     val bcColumnsSum = spark.sparkContext.broadcast(columnsSum)
@@ -225,17 +232,17 @@ object ExternalValidation extends Logging {
 
     val firstValue = dfClusteringResult.map { row =>
       val totalRow = getSumRow(row)
-      val pi = (totalRow / bcTotalElements.value)
+      val pi = totalRow / bcTotalElements.value
 
-      pi * math.log10(pi)
+      pi * log2(pi)
 
     }.reduce(_ + _)
 
     val secondValueSeq = for (i <- dfClusteringResult.columns.indices) yield {
 
-      val pj = (bcColumnsSum.value.apply(i) / bcTotalElements.value)
+      val pj = bcColumnsSum.value.apply(i) / bcTotalElements.value
 
-      pj * math.log10(pj)
+      pj * log2(pj)
 
     }
     val secondValue = secondValueSeq.sum
@@ -244,18 +251,19 @@ object ExternalValidation extends Logging {
       val totalRow = getSumRow(row)
 
       val variationOfInformationSeq = for (i <- 0 until row.size) yield {
-        val cellValue = row.getDouble(i) / totalRow
-        val pi = (totalRow / bcTotalElements.value)
-        val pj = (bcColumnsSum.value.apply(i) / bcTotalElements.value)
+        val cellValue = row.getLong(i) / bcTotalElements.value
+        val pi = totalRow / bcTotalElements.value
+        val pj = bcColumnsSum.value.apply(i) / bcTotalElements.value
+
         //If cellValue is zero log(0) is set to zero
-        if (cellValue != 0) cellValue * math.log10(cellValue / (pi * pj)) else 0.0
+        if (cellValue != 0) cellValue * log2(cellValue / (pi * pj)) else 0.0
       }
 
       variationOfInformationSeq.sum
 
     }.reduce(_ + _)
 
-    -firstValue - secondValue - 2 * thirdValue
+    -firstValue - secondValue - (2 * thirdValue)
 
   }
 
@@ -273,13 +281,13 @@ object ExternalValidation extends Logging {
     logInfo("Calculating Goodman-Kruskal")
 
     val totalElements = getTotalElements(dfClusteringResult)
-    val bcTotalElements = spark.sparkContext.broadcast(totalElements)
+    val bcTotalElements = spark.sparkContext.broadcast(totalElements.doubleValue())
 
     dfClusteringResult.map { row =>
-      val totalRow = getSumRow(row)
+      val totalRow = getSumRow(row).doubleValue()
 
       val rowPuritySeq = for (i <- 0 until row.size) yield {
-        row.getDouble(i) / totalRow
+        row.getLong(i) / totalRow
       }
 
       val rowPurity = rowPuritySeq.max
@@ -324,10 +332,9 @@ object ExternalValidation extends Logging {
     val secondValue = secondValueSeq.sum
 
     val thirdValue = dfClusteringResult.map { row =>
-      val totalRow = getSumRow(row)
 
       val variationOfInformationSeq = for (i <- 0 until row.size) yield {
-        val cellValue = row.getDouble(i) / totalRow
+        val cellValue = row.getLong(i)
 
         combina2(cellValue)
       }
@@ -359,12 +366,11 @@ object ExternalValidation extends Logging {
     val bcColumnsSum = spark.sparkContext.broadcast(columnsSum)
 
     val firstValue = dfClusteringResult.map { row =>
-      val totalRow = getSumRow(row)
 
       val variationOfInformationSeq = for (i <- 0 until row.size) yield {
-        val cellValue = row.getDouble(i) / totalRow
-
-        combina2(cellValue)
+        val cellValue = row.getLong(i)
+        //If cellValue is zero log(0) is set to zero
+        if (cellValue != 0) combina2(cellValue) else 0.0
       }
 
       variationOfInformationSeq.sum
@@ -374,19 +380,20 @@ object ExternalValidation extends Logging {
     val secondValue = dfClusteringResult.map { row =>
       val totalRow = getSumRow(row)
 
-      combina2(totalRow)
+      if (totalRow != 0) combina2(totalRow) else 0.0
 
     }.reduce(_ + _)
 
-    val secondValueSeq = for (i <- dfClusteringResult.columns.indices) yield {
-
-      combina2(bcColumnsSum.value.apply(i))
+    val thirdValueSeq = for (i <- dfClusteringResult.columns.indices) yield {
+      val pj = bcColumnsSum.value.apply(i)
+      if (pj != 0) combina2(pj) else 0.0
 
     }
-    val thirdValue = secondValueSeq.sum
+    val thirdValue = thirdValueSeq.sum
+    val combina2Total = combina2(totalElements)
+    //println(s"($firstValue - (($secondValue * $thirdValue) / $combina2Total)) / ((0.5) * (($secondValue + $thirdValue) - ($secondValue * $thirdValue)) / $combina2Total)")
 
-    (firstValue - (secondValue * thirdValue) / combina2(totalElements)) / ((1 / 2) * (secondValue + thirdValue) - (secondValue * thirdValue) / combina2(totalElements))
-
+    if (combina2Total != 0) (firstValue - ((secondValue * thirdValue) / combina2Total)) / (0.5 * (secondValue + thirdValue) - (secondValue * thirdValue) / combina2Total) else 0.0
 
   }
 
@@ -407,15 +414,14 @@ object ExternalValidation extends Logging {
     val bcColumnsSum = spark.sparkContext.broadcast(columnsSum)
 
     val firstValue = dfClusteringResult.map { row =>
-      val totalRow = getSumRow(row)
 
-      val variationOfInformationSeq = for (i <- 0 until row.size) yield {
-        val cellValue = row.getDouble(i) / totalRow
+      val jaccardSeq = for (i <- 0 until row.size) yield {
+        val cellValue = row.getLong(i)
 
         combina2(cellValue)
       }
 
-      variationOfInformationSeq.sum
+      jaccardSeq.sum
 
     }.reduce(_ + _)
 
@@ -455,10 +461,9 @@ object ExternalValidation extends Logging {
     val bcColumnsSum = spark.sparkContext.broadcast(columnsSum)
 
     val firstValue = dfClusteringResult.map { row =>
-      val totalRow = getSumRow(row)
 
       val fowlkesSeq = for (i <- 0 until row.size) yield {
-        val cellValue = row.getDouble(i) / totalRow
+        val cellValue = row.getLong(i)
 
         combina2(cellValue)
       }
@@ -504,10 +509,9 @@ object ExternalValidation extends Logging {
     val bcColumnsSum = spark.sparkContext.broadcast(columnsSum)
 
     val firstValue = dfClusteringResult.map { row =>
-      val totalRow = getSumRow(row)
 
       val variationOfInformationSeq = for (i <- 0 until row.size) yield {
-        val cellValue = row.getDouble(i) / totalRow
+        val cellValue = row.getLong(i)
 
         combina2(cellValue)
       }
@@ -551,10 +555,9 @@ object ExternalValidation extends Logging {
     val bcColumnsSum = spark.sparkContext.broadcast(columnsSum)
 
     val firstValue = dfClusteringResult.map { row =>
-      val totalRow = getSumRow(row)
 
       val minkowskiSeq = for (i <- 0 until row.size) yield {
-        val cellValue = row.getDouble(i) / totalRow
+        val cellValue = row.getLong(i)
 
         combina2(cellValue)
       }
@@ -589,10 +592,10 @@ object ExternalValidation extends Logging {
     * @example getRowSum(rowExample)
     */
 
-  def getSumRow(row: Row): Double = {
+  def getSumRow(row: Row): Long = {
 
     val a = for (i <- 0 until row.size) yield {
-      row.getDouble(i)
+      row.getLong(i)
     }
 
     a.sum
@@ -604,12 +607,12 @@ object ExternalValidation extends Logging {
     * @param data The Row which values are going to be summed
     * @example getSumColumns(rowExample)
     */
-  def getSumColumns(data: DataFrame): Array[Double] = {
+  def getSumColumns(data: DataFrame): Array[Long] = {
 
     val columnNames = data.columns
 
     columnNames.map { colName =>
-      data.select(sum(colName)).first().getDouble(0)
+      data.select(sum(colName)).first().getLong(0)
     }
 
   }
@@ -623,7 +626,7 @@ object ExternalValidation extends Logging {
   def getMaxRow(row: Row): Double = {
 
     val a = for (i <- 0 until row.size) yield {
-      row.getDouble(i)
+      row.getLong(i)
     }
 
     a.sum
@@ -636,7 +639,7 @@ object ExternalValidation extends Logging {
     * @param data Clustering Result RDD with
     * @example getTotalElements(dfExample)
     */
-  def getTotalElements(data: DataFrame): Double = {
+  def getTotalElements(data: DataFrame): Long = {
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
 
@@ -662,7 +665,7 @@ object ExternalValidation extends Logging {
     * @param number Number to be combined
     * @example combina2(10)
     */
-  def combina2(number: Double): Double = {
+  def combina2(number: Long): Double = {
     (number * (number - 1)) / 2
   }
 
@@ -680,7 +683,7 @@ object ExternalValidation extends Logging {
     val dfTotal = dfClusteringResult.groupBy("prediction", "class")
       .count()
     val dfTotalClusters = dfTotal
-      .withColumn("count", dfTotal("count").cast(DoubleType))
+      .withColumn("count", dfTotal("count").cast(LongType))
       .cache()
 
     //    println("dfTotalClusters")
@@ -695,11 +698,10 @@ object ExternalValidation extends Logging {
             .where(s"prediction == '$cluster'")
             .where(s"class == '$feature'")
             .first()
-            .getDouble(0)
+            .getLong(0)
         } catch {
-          case ex: NoSuchElementException => {
+          case ex: NoSuchElementException =>
             0.0
-          }
         }
 
         (cluster, clusterRatio)
@@ -711,8 +713,8 @@ object ExternalValidation extends Logging {
 
 
       val schema = Array(
-        StructField("prediction", IntegerType, true),
-        StructField(s"$feature", DoubleType, true))
+        StructField("prediction", IntegerType, nullable = true),
+        StructField(s"$feature", LongType, nullable = true))
 
       val customSchema = StructType(schema)
 

@@ -20,7 +20,7 @@ object MainTest {
 
     var featuresFile = "C:\\Users\\Josem\\Dropbox\\PHD\\Proyectos\\2017-08 - Clustering Trabajadores BACK\\Caracteristicas Demandas.csv"
     var clusterResultFile = "C:\\Users\\Josem\\Dropbox\\PHD\\Proyectos\\2017-08 - Clustering Trabajadores BACK\\Resultados Clusters\\KM200"
-    var numClusters = 200
+    var numClusters = 3
     var threshold = 20f
 
 
@@ -45,7 +45,8 @@ object MainTest {
     //val df = spark.sparkContext.parallelize(Seq((80, 0, 20), (10, 80, 10), (0, 0, 100))).toDF("A", "B", "C")
     //val df = spark.sparkContext.parallelize(Seq((60, 54, 46, 41), (40, 44, 53, 57))).toDF("A", "B", "C", "D")
 
-    val df = spark.sparkContext.parallelize(Seq((1000.0, 0.0, 0.0), (0.0, 1000.0, 0.0), (0.0, 0.0, 1000.0))).toDF("A", "B", "C")
+    val df = spark.sparkContext.parallelize(Seq((10L, 0L, 0L), (0L, 10L, 0L), (0L, 0L, 10L))).toDF("A", "B", "C")
+    //val df = spark.sparkContext.parallelize(Seq((33.0, 33.0, 33.0), (33.0, 33.0, 33.0), (33.0, 33.0, 33.0))).toDF("A", "B", "C")
 
     println("ENTROPY:")
     val entropy = ExternalValidation.getEntropy(df)
@@ -95,7 +96,6 @@ object MainTest {
     val minkowski = ExternalValidation.getMinkowski(df)
     println(minkowski)
 
-    println(ExternalValidation.combina2(3))
 
 
   }

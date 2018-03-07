@@ -5,7 +5,6 @@ import org.apache.log4j.{Level, Logger}
 import org.apache.spark.ml.clustering.KMeans
 import org.apache.spark.ml.feature.VectorAssembler
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.functions.{col, when}
 import org.apache.spark.sql.types.DoubleType
 
 /**
@@ -20,7 +19,7 @@ object MainLiterature {
     val spark = SparkSession
       .builder()
       .appName("Featuring Clusters")
-      //.master("local[*]")
+      .master("local[*]")
       .getOrCreate()
 
     val irisFile = "C:\\datasets\\Validation\\iris.data"
@@ -35,9 +34,13 @@ object MainLiterature {
     val vehiclesFile = "C:\\datasets\\Validation\\vehicles.dat"
     val data_UserFile = "C:\\datasets\\Validation\\Data_User.csv"
     val waveformFile = "C:\\datasets\\Validation\\waveform.data"
-    val planningFile = "C:\\datasets\\Validation\\planing_relax.txt"
+    val relaxFile = "C:\\datasets\\Validation\\planing_relax.txt"
     val susyFile = "C:\\datasets\\Validation\\SUSY.csv"
-    val higgsFile = "C:\\datasets\\Validation\\HIGGS\\HIGGS.csv"
+
+    val susy_limited = "C:\\Users\\Josem\\Documents\\ExternalValidity\\SUSY_limited2"
+
+    val emoticonsFile = "C:\\datasets\\Validation\\multilabel\\emotions\\emotions.dat"
+    val sceneFile = "C:\\datasets\\Validation\\multilabel\\scene\\scene.dat"
 
     val synthetic = "C:\\datasets\\Validation\\Synthetics\\C9-D5-I10000"
 
@@ -45,9 +48,11 @@ object MainLiterature {
     val numIterations = 1000
     var minClusters = 2
     var maxClusters = 10
-    var origen = higgsFile
-    var destino: String = Utils.whatTimeIsIt() + "-higgsFile"
-    var classIndex = 0
+    var origen = emoticonsFile
+    var destino: String = Utils.whatTimeIsIt() + "-emoticonsFile"
+    var idIndex = -1
+    var classIndex = 294
+    var delimiter = ","
 
     if (args.length > 4) {
       minClusters = args(0).toInt
@@ -55,6 +60,8 @@ object MainLiterature {
       origen = args(2)
       destino = args(3)
       classIndex = args(4).toInt
+      delimiter = args(5)
+      idIndex = args(6).toInt
     }
 
     println("Loading file..")
@@ -62,13 +69,20 @@ object MainLiterature {
     val dataRead = spark.read
       .option("header", "false")
       .option("inferSchema", "true")
-      .option("delimiter", ",")
+      .option("delimiter", delimiter)
       .csv(origen)
 
     dataRead.printSchema()
 
-    //val data = dataRead.withColumnRenamed(dataRead.columns(dataRead.columns.length - 1), "class")
-    var data = dataRead.withColumnRenamed(dataRead.columns(classIndex), "class")
+    //Si el fichero tiene indice, se le dropea, si no símplemente cambiamos el nombre a la columna
+    var data = if (idIndex != -1) {
+      dataRead.drop(s"_c$idIndex")
+        .withColumnRenamed(dataRead.columns(classIndex), "class")
+    } else {
+      dataRead.withColumnRenamed(dataRead.columns(classIndex), "class")
+      //.drop("_c294", "c_295", "c_296", "c_298", "c_299")
+    }
+
 
     //data = data.withColumn("class", when(col("class") > "0", "1").otherwise("0")).cache()
     //data.show()
@@ -104,18 +118,12 @@ object MainLiterature {
 
       val elapsed = (System.nanoTime() - start) / 1000000000.0
       println("TIEMPO TOTAL: " + elapsed)
-
-
       println("Cluster DONE!")
 
-      //Featuring
-//      predictionResult.show()
-//      predictionResult.repartition(1).write
-//        .option("header", "true")
-//        .option("delimiter", "\t")
-//        .csv(s"$destino-DF-$numClusters")
+      val contingencyTable = predictionResult.stat.crosstab("prediction", "class")
 
-      val contingencyTable = ExternalValidation.getContingencyMatrix(predictionResult, numClusters)
+      //      val contingencyTable = ExternalValidation.getContingencyMatrix(predictionResult, numClusters)
+
       println("contingencyTable")
       //      contingencyTable.printSchema()
       contingencyTable.show()
@@ -124,7 +132,7 @@ object MainLiterature {
         .option("delimiter", "\t")
         .csv(s"$destino-contingencyTable-$numClusters")
 
-      val res = ExternalValidation.calculateExternalIndices(contingencyTable.drop("prediction"))
+      val res = ExternalValidation.calculateExternalIndices(contingencyTable.drop("prediction_class"))
       (numClusters, res)
       //println(res.toString)
 

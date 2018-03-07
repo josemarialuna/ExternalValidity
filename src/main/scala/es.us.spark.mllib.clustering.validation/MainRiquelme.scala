@@ -19,7 +19,7 @@ object MainRiquelme {
     val spark = SparkSession
       .builder()
       .appName("Featuring Clusters")
-      //.master("local[*]")
+      .master("local[*]")
       .getOrCreate()
 
     val irisFile = "C:\\datasets\\Validation\\iris.data"
@@ -40,22 +40,26 @@ object MainRiquelme {
     val synthetic = "C:\\datasets\\Validation\\Synthetics\\C3-D5-I1000"
     val susy_limited = "C:\\Users\\Josem\\Documents\\ExternalValidity\\SUSY_limited2"
 
+    val emoticonsFile = "C:\\datasets\\Validation\\multilabel\\emotions\\emotions.dat"
+    val sceneFile = "C:\\datasets\\Validation\\multilabel\\scene\\scene.dat"
 
     val numIterations = 1000
-    var minClusters = 2
+    var minClusters = 4
     var maxClusters = 5
-    var origen = susyFile
-    var destino: String = Utils.whatTimeIsIt() + "susyFile"
+    var origen = columnFile
+    var destino: String = Utils.whatTimeIsIt() + "-columnFile"
     var idIndex = -1
-    var classIndex = 0
-    val delimiter = ","
+    var classIndex = 6
+    var delimiter = " "
 
-    if (args.length > 4) {
+    if (args.length > 3) {
       minClusters = args(0).toInt
       maxClusters = args(1).toInt
       origen = args(2)
       destino = args(3)
       classIndex = args(4).toInt
+      delimiter = args(5)
+      idIndex = args(6).toInt
     }
 
     val dataRead = spark.read
@@ -67,13 +71,13 @@ object MainRiquelme {
     dataRead.printSchema()
 
     //Si el fichero tiene indice, se le dropea, si no símplemente cambiamos el nombre a la columna
-    var data = if (idIndex != -1) {
+    val data = if (idIndex != -1) {
       dataRead.drop(s"_c$idIndex")
         .withColumnRenamed(dataRead.columns(classIndex), "class")
     } else {
       dataRead.withColumnRenamed(dataRead.columns(classIndex), "class")
+      //.drop("_c72", "c_74", "c_75", "c_76", "c_77")
     }
-    import org.apache.spark.sql.functions._
 
     //data = data.withColumn("class", when(col("class") > "0", "1").otherwise("0")).cache
 
@@ -114,6 +118,10 @@ object MainRiquelme {
 
       //Featuring
       predictionResult.show()
+      predictionResult.repartition(1).write
+        .option("header", "true")
+        .option("delimiter", "\t")
+        .csv(s"$destino-kmeansRes-$numClusters")
 
 
       val res = FeatureStatistics.getTotalChi(List("class"), "", predictionResult, predictionResult, numClusters, destino)
