@@ -11,12 +11,9 @@ import org.apache.spark.sql.{DataFrame, Row}
 object Feature extends Logging {
 
   /**
-    * Return a String with the values of chi square of both contingency tables separated by an "+" symbol
+    * Return two DataFrames with the contingency tables for the given DataFrame
     *
-    * @param featureNameList List of feature names of the data
-    * @param dfResults       DataFrame with "prediction" column and the columns of features
-    * @param numClusters     Total umber of clusters
-    * @param destino         Destiny path for the results
+    * @param df Dataframe with the columns "prediction" and "class" which is going to be calculated the chi square
     * @example getContingencies(dataRow, dataColumn, numClusters)
     */
 
