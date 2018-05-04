@@ -206,25 +206,24 @@ object Feature extends Logging {
     //begin by clusters//////////////////
     val dfCrossCluster = df.stat.crosstab("class", "prediction").sort("class_prediction")
 
-
     //gipsy fabs method
-    var dfRenamed = dfCrossCluster.columns.foldLeft(dfCrossCluster)((curr, n) => curr.withColumnRenamed(n, n.replaceAll("\\.", "_")))
-    val dfValues2 = dfCrossCluster.drop("class_prediction")
+    var dfRenamed2 = dfCrossCluster.columns.foldLeft(dfCrossCluster)((curr, n) => curr.withColumnRenamed(n, n.replaceAll("\\.", "_")))
+    val dfValues2 = dfRenamed2.drop("class_prediction")
 
     val columnsModify2 = dfValues2.columns.map(col).map(colName => {
       val total = dfValues2.select(sum(colName)).first().get(0)
       (colName / total) * 100 as (s"${colName}")
     })
 
-    val dfByClusters = dfRenamed.select(col("class_prediction") +: columnsModify2: _*)
-
+    val dfByClusters = dfRenamed2.select(col("class_prediction") +: columnsModify2: _*)
     //End by clusters//////////////////
 
 
     //begin by class//////////////////
     val dfCrossClass = df.stat.crosstab("prediction", "class").sort("prediction_class")
 
-    val dfValues = dfCrossClass.drop("prediction_class")
+    var dfRenamed = dfCrossClass.columns.foldLeft(dfCrossClass)((curr, n) => curr.withColumnRenamed(n, n.replaceAll("\\.", "_")))
+    val dfValues = dfRenamed.drop("prediction_class")
 
     val columnsModify = dfValues.columns.map(col).map(colName => {
       val total = dfValues.select(sum(colName)).first().get(0)
@@ -232,8 +231,7 @@ object Feature extends Logging {
     })
 
 
-    val dfByColumns = dfCrossClass.select(col("prediction_class") +: columnsModify: _*)
-
+    val dfByColumns = dfRenamed.select(col("prediction_class") +: columnsModify: _*)
     //End by columns//////////////////
 
 
