@@ -6,7 +6,7 @@ import es.us.spark.mllib.Utils
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
-import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
+import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 
 /**
   * Created by Josem on 27/09/2017.
@@ -25,7 +25,7 @@ object Feature extends Logging {
     */
   def calculateRatioByCluster(featureName: String, list_feature: Array[String], dfJoin: DataFrame, numClusters: Int): DataFrame = {
 
-    require(numClusters > 1, "The number of cluster should be more than 1.")
+    //require(numClusters > 1, "The number of cluster should be more than 1.")
 
     logInfo(s"Processing ratio by cluster: $featureName..")
 
@@ -64,8 +64,8 @@ object Feature extends Logging {
 
         (cluster, clusterRatio)
       }
-//
-//      dfDefinitivo.unpersist()
+      //
+      //      dfDefinitivo.unpersist()
 
       val spark = SparkSession.builder().getOrCreate()
 
@@ -200,6 +200,48 @@ object Feature extends Logging {
 
   }
 
+
+  def getContingencies(df: DataFrame): (DataFrame, DataFrame) = {
+
+    //begin by clusters//////////////////
+    val dfCrossCluster = df.stat.crosstab("class", "prediction").sort("class_prediction")
+
+
+    //gipsy fabs method
+    var dfRenamed = dfCrossCluster.columns.foldLeft(dfCrossCluster)((curr, n) => curr.withColumnRenamed(n, n.replaceAll("\\.", "_")))
+    val dfValues2 = dfCrossCluster.drop("class_prediction")
+
+    val columnsModify2 = dfValues2.columns.map(col).map(colName => {
+      val total = dfValues2.select(sum(colName)).first().get(0)
+      (colName / total) * 100 as (s"${colName}")
+    })
+
+    val dfByClusters = dfRenamed.select(col("class_prediction") +: columnsModify2: _*)
+
+    //End by clusters//////////////////
+
+
+    //begin by class//////////////////
+    val dfCrossClass = df.stat.crosstab("prediction", "class").sort("prediction_class")
+
+    val dfValues = dfCrossClass.drop("prediction_class")
+
+    val columnsModify = dfValues.columns.map(col).map(colName => {
+      val total = dfValues.select(sum(colName)).first().get(0)
+      (colName / total) * 100 as (s"${colName}")
+    })
+
+
+    val dfByColumns = dfCrossClass.select(col("prediction_class") +: columnsModify: _*)
+
+    //End by columns//////////////////
+
+
+    (dfByClusters, dfByColumns)
+
+  }
+
+
   /**
     * Calculate and save the dataframe by cluster
     *
@@ -306,56 +348,57 @@ object Feature extends Logging {
       .withColumnRenamed("count", "totalFeature")
       .cache()
 
-    val rows = list_feature.map { feature =>
+    val rows = list_feature.map {
+      feature =>
 
-      val dfFeatures = dfJoin.groupBy("prediction", s"$featureName")
-        .count()
-        .withColumnRenamed("count", "totalFeatureCluster")
+        val dfFeatures = dfJoin.groupBy("prediction", s"$featureName")
+          .count()
+          .withColumnRenamed("count", "totalFeatureCluster")
 
-      val dfDefinitivo = dfTotalClusters.join(dfFeatures, s"$featureName")
-        .withColumn("abs", col("totalFeatureCluster") / col("totalFeature") * 100)
-        .select("prediction", s"$featureName", "abs")
-        .sort("prediction", s"$featureName")
-        .repartition(col("prediction"))
-        .cache()
-      //dfDefinitivo.show(20)
+        val dfDefinitivo = dfTotalClusters.join(dfFeatures, s"$featureName")
+          .withColumn("abs", col("totalFeatureCluster") / col("totalFeature") * 100)
+          .select("prediction", s"$featureName", "abs")
+          .sort("prediction", s"$featureName")
+          .repartition(col("prediction"))
+          .cache()
+        //dfDefinitivo.show(20)
 
 
-      val columna = for (cluster <- 0 until numClusters) yield {
+        val columna = for (cluster <- 0 until numClusters) yield {
 
-        val featureRatio = try {
-          dfDefinitivo.select("abs")
-            .where(s"prediction == '$cluster'")
-            .where(s"$featureName == '$feature'")
-            .first()
-            .getDouble(0)
-        } catch {
-          case ex: NoSuchElementException => {
-            0.0
+          val featureRatio = try {
+            dfDefinitivo.select("abs")
+              .where(s"prediction == '$cluster'")
+              .where(s"$featureName == '$feature'")
+              .first()
+              .getDouble(0)
+          } catch {
+            case ex: NoSuchElementException => {
+              0.0
+            }
           }
+
+          (cluster, featureRatio)
         }
 
-        (cluster, featureRatio)
-      }
+        dfDefinitivo.unpersist()
 
-      dfDefinitivo.unpersist()
-
-      val spark = SparkSession.builder().getOrCreate()
+        val spark = SparkSession.builder().getOrCreate()
 
 
-      val schema = Array(
-        StructField("prediction", IntegerType, true),
-        StructField(s"$feature", DoubleType, true))
+        val schema = Array(
+          StructField("prediction", IntegerType, true),
+          StructField(s"$feature", DoubleType, true))
 
-      val customSchema = StructType(schema)
+        val customSchema = StructType(schema)
 
-      val columnaRDD = spark.sparkContext.parallelize(columna)
-      val filas = columnaRDD.map(Row.fromTuple(_))
+        val columnaRDD = spark.sparkContext.parallelize(columna)
+        val filas = columnaRDD.map(Row.fromTuple(_))
 
-      logInfo(s"\tValue: $feature DONE!")
+        logInfo(s"\tValue: $feature DONE!")
 
 
-      spark.createDataFrame(filas, customSchema)
+        spark.createDataFrame(filas, customSchema)
 
     }
 
@@ -385,56 +428,57 @@ object Feature extends Logging {
       .withColumnRenamed("sum(coloc)", "totalFeature")
       .cache()
 
-    val rows = list_feature.map { feature =>
+    val rows = list_feature.map {
+      feature =>
 
-      val dfFeatures = dfJoin.groupBy("prediction", s"$featureName")
-        .agg(sum("coloc"))
-        .withColumnRenamed("sum(coloc)", "totalFeatureCluster")
+        val dfFeatures = dfJoin.groupBy("prediction", s"$featureName")
+          .agg(sum("coloc"))
+          .withColumnRenamed("sum(coloc)", "totalFeatureCluster")
 
-      val dfDefinitivo = dfTotalClusters.join(dfFeatures, s"$featureName")
-        .withColumn("abs", col("totalFeatureCluster") / col("totalFeature") * 100)
-        .select("prediction", s"$featureName", "abs")
-        .sort("prediction", s"$featureName")
-        .repartition(col("prediction"))
-        .cache()
-      //dfDefinitivo.show(20)
+        val dfDefinitivo = dfTotalClusters.join(dfFeatures, s"$featureName")
+          .withColumn("abs", col("totalFeatureCluster") / col("totalFeature") * 100)
+          .select("prediction", s"$featureName", "abs")
+          .sort("prediction", s"$featureName")
+          .repartition(col("prediction"))
+          .cache()
+        //dfDefinitivo.show(20)
 
 
-      val columna = for (cluster <- 0 until numClusters) yield {
+        val columna = for (cluster <- 0 until numClusters) yield {
 
-        val featureRatio = try {
-          dfDefinitivo.select("abs")
-            .where(s"prediction == '$cluster'")
-            .where(s"$featureName == '$feature'")
-            .first()
-            .getDouble(0)
-        } catch {
-          case ex: NoSuchElementException => {
-            0.0
+          val featureRatio = try {
+            dfDefinitivo.select("abs")
+              .where(s"prediction == '$cluster'")
+              .where(s"$featureName == '$feature'")
+              .first()
+              .getDouble(0)
+          } catch {
+            case ex: NoSuchElementException => {
+              0.0
+            }
           }
+
+          (cluster, featureRatio)
         }
 
-        (cluster, featureRatio)
-      }
+        dfDefinitivo.unpersist()
 
-      dfDefinitivo.unpersist()
-
-      val spark = SparkSession.builder().getOrCreate()
+        val spark = SparkSession.builder().getOrCreate()
 
 
-      val schema = Array(
-        StructField("prediction", IntegerType, true),
-        StructField(s"$feature", DoubleType, true))
+        val schema = Array(
+          StructField("prediction", IntegerType, true),
+          StructField(s"$feature", DoubleType, true))
 
-      val customSchema = StructType(schema)
+        val customSchema = StructType(schema)
 
-      val columnaRDD = spark.sparkContext.parallelize(columna)
-      val filas = columnaRDD.map(Row.fromTuple(_))
+        val columnaRDD = spark.sparkContext.parallelize(columna)
+        val filas = columnaRDD.map(Row.fromTuple(_))
 
-      logInfo(s"\tValue: $feature DONE!")
+        logInfo(s"\tValue: $feature DONE!")
 
 
-      spark.createDataFrame(filas, customSchema)
+        spark.createDataFrame(filas, customSchema)
 
     }
 
@@ -554,51 +598,51 @@ object Feature extends Logging {
 
   }
 
-
-  def getReport(dfOrigen: DataFrame, dfDestino: DataFrame): Dataset[String] = {
-
-    val spark = dfOrigen.sparkSession
-
-    val bcOrigenColums = spark.sparkContext.broadcast(dfOrigen.columns)
-
-    import spark.implicits._
-
-    val origen = dfOrigen.map { thisRow =>
-
-      getMaxOfRows(thisRow, bcOrigenColums.value)
-    }
-
-    //    origen.show(5)
-
-    val bcDestinoColums = spark.sparkContext.broadcast(dfDestino.columns)
-
-    val destino = dfDestino.map(x2 =>
-      getMaxOfRows(x2, bcDestinoColums.value)
-    )
-
-    //    destino.show(5)
-
-    val dfFullText = origen.join(destino, "_1")
-
-    //    dfFullText.show(100)
-
-    val fullText = dfFullText.map { thisRow =>
-
-      var stringAux = ""
-
-      for (i <- 0 until thisRow.size) {
-        stringAux += thisRow.get(i) + "\t"
-      }
-      stringAux
-    }
-
-    fullText.rdd
-      .repartition(1)
-      .saveAsTextFile("Report-" + Utils.whatTimeIsIt())
-
-    fullText
-
-  }
+  //
+  //  def getReport(dfOrigen: DataFrame, dfDestino: DataFrame): Dataset[String] = {
+  //
+  //    val spark = dfOrigen.sparkSession
+  //
+  //    val bcOrigenColums = spark.sparkContext.broadcast(dfOrigen.columns)
+  //
+  //    val origen = dfOrigen.map {
+  //      thisRow =>
+  //
+  //        getMaxOfRows(thisRow, bcOrigenColums.value)
+  //    }
+  //
+  //    //    origen.show(5)
+  //
+  //    val bcDestinoColums = spark.sparkContext.broadcast(dfDestino.columns)
+  //
+  //    val destino = dfDestino.map(x2 =>
+  //      getMaxOfRows(x2, bcDestinoColums.value)
+  //    )
+  //
+  //    //    destino.show(5)
+  //
+  //    val dfFullText = origen.join(destino, "_1")
+  //
+  //    //    dfFullText.show(100)
+  //
+  //    val fullText = dfFullText.map {
+  //      thisRow =>
+  //
+  //        var stringAux = ""
+  //
+  //        for (i <- 0 until thisRow.size) {
+  //          stringAux += thisRow.get(i) + "\t"
+  //        }
+  //        stringAux
+  //    }
+  //
+  //    fullText.rdd
+  //      .repartition(1)
+  //      .saveAsTextFile("Report-" + Utils.whatTimeIsIt())
+  //
+  //    fullText
+  //
+  //  }
 
 
   def getMaxOfRows(thisRow: Row, nameColums: Array[String]): (Int, String, Double, String, Double, String, Double, String, Double, String, Double, String, Double) = {

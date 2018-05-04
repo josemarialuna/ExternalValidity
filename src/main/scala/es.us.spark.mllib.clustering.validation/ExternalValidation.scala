@@ -77,15 +77,18 @@ object ExternalValidation extends Logging {
 
     logInfo("Calculating Entropy")
 
+    //    dfClusteringResult.printSchema()
+    //    dfClusteringResult.show()
+
     val totalElements = getTotalElements(dfClusteringResult)
     val bcTotalElements = spark.sparkContext.broadcast(totalElements.doubleValue())
 
     val entropy = dfClusteringResult.map { row =>
       val totalRow = getSumRow(row)
+      val pi = totalRow.doubleValue() / bcTotalElements.value
 
       val rowEntropySeq = for (i <- 0 until row.size) yield {
         val cellValue = row.getLong(i) / bcTotalElements.value.doubleValue()
-        val pi = totalRow.doubleValue() / bcTotalElements.value
 
         //If cellValue is zero log(0) is set to zero
         if (cellValue != 0) (cellValue / pi) * log2(cellValue / pi) else 0.0
@@ -93,7 +96,7 @@ object ExternalValidation extends Logging {
 
       val rowEntropy = -rowEntropySeq.sum
 
-      (totalRow / bcTotalElements.value) * rowEntropy
+      pi * rowEntropy
 
     }.reduce(_ + _)
 
@@ -612,9 +615,15 @@ object ExternalValidation extends Logging {
     val columnNames = data.columns
 
     columnNames.map { colName =>
-      data.select(sum(colName)).first().getLong(0)
+      data.select(sum(cleanColumnName(colName))).first().getLong(0)
     }
 
+  }
+
+  // Back ticks can't exist in DataFrame column names, therefore drop them. To be able to accept
+  // special keywords and `.`, wrap the column names in ``.
+  def cleanColumnName(name: String): String = {
+    s"`$name`"
   }
 
   /**
@@ -674,6 +683,7 @@ object ExternalValidation extends Logging {
     *
     * @param dfClusteringResult Dataframe with the assigned cluster and the class to which belongs
     * @example getContingencyMatrix(kmeansResult)
+    * @deprecated ("This method was replaced by DataFrame.stat.crosstab")
     */
   def getContingencyMatrix(dfClusteringResult: DataFrame, numClusters: Int): DataFrame = {
     val list_feature = dfClusteringResult.select("class")
@@ -710,7 +720,6 @@ object ExternalValidation extends Logging {
       dfTotalClusters.unpersist()
 
       val spark = SparkSession.builder().getOrCreate()
-
 
       val schema = Array(
         StructField("prediction", IntegerType, nullable = true),

@@ -2,7 +2,7 @@ package es.us.spark.mllib.clustering.validation
 
 import es.us.spark.mllib.Utils
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.ml.clustering.KMeans
+import org.apache.spark.ml.clustering.{BisectingKMeans, GaussianMixture, KMeans, LDA}
 import org.apache.spark.ml.feature.VectorAssembler
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.types.DoubleType
@@ -96,6 +96,7 @@ object MainLiterature {
       println("*******************************")
       println("Configuration:")
       println("\tCLUSTERS: " + numClusters)
+      println(s"\tFile: $origen")
       println("Running...\n")
 
 
@@ -104,11 +105,14 @@ object MainLiterature {
       val df_kmeans = featureAssembler.transform(data).select("class", "features")
       //df_kmeans.show()
 
-      val kmeans = new KMeans().setK(numClusters)
+      //val clusteringResult = new KMeans()
+      val clusteringResult = new BisectingKMeans()
+        //val clusteringResult = new GaussianMixture()
+        .setK(numClusters)
         .setSeed(1L)
         .setMaxIter(numIterations)
         .setFeaturesCol("features")
-      val model = kmeans.fit(df_kmeans)
+      val model = clusteringResult.fit(df_kmeans)
 
       var predictionResult = model.transform(df_kmeans)
         .select("class", "prediction")

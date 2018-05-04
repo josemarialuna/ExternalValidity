@@ -20,7 +20,7 @@ object MainTest {
 
     var featuresFile = "C:\\Users\\Josem\\Dropbox\\PHD\\Proyectos\\2017-08 - Clustering Trabajadores BACK\\Caracteristicas Demandas.csv"
     var clusterResultFile = "C:\\Users\\Josem\\Dropbox\\PHD\\Proyectos\\2017-08 - Clustering Trabajadores BACK\\Resultados Clusters\\KM200"
-    var numClusters = 3
+    var numClusters = 2
     var threshold = 20f
 
 
@@ -45,58 +45,65 @@ object MainTest {
     //val df = spark.sparkContext.parallelize(Seq((80, 0, 20), (10, 80, 10), (0, 0, 100))).toDF("A", "B", "C")
     //val df = spark.sparkContext.parallelize(Seq((60, 54, 46, 41), (40, 44, 53, 57))).toDF("A", "B", "C", "D")
 
-    val df = spark.sparkContext.parallelize(Seq((10L, 0L, 0L), (0L, 10L, 0L), (0L, 0L, 10L))).toDF("A", "B", "C")
+    //val df = spark.sparkContext.parallelize(Seq((10L, 0L, 0L), (0L, 10L, 0L), (0L, 0L, 10L))).toDF("A", "B", "C")
     //val df = spark.sparkContext.parallelize(Seq((33.0, 33.0, 33.0), (33.0, 33.0, 33.0), (33.0, 33.0, 33.0))).toDF("A", "B", "C")
 
-    println("ENTROPY:")
-    val entropy = ExternalValidation.getEntropy(df)
-    println(entropy)
+    val df = spark.sparkContext.parallelize(Seq(("A", 0),("A", 0),("A", 0),("B",0),("B",0),("B",0),("C",0),("C",0),("C",0),("C",0),("A",1),("B",1),("B",1))).toDF("class", "prediction")
 
-    println("PURITY:")
-    val purity = ExternalValidation.getPurity(df)
-    println(purity)
+    /*
+        println("ENTROPY:")
+        val entropy = ExternalValidation.getEntropy(df)
+        println(entropy)
 
-    println("MUTUAL INFORMATION:")
-    val mutualInformation = ExternalValidation.getMutualInformation(df)
-    println(mutualInformation)
+        println("PURITY:")
+        val purity = ExternalValidation.getPurity(df)
+        println(purity)
 
-    println("F-MEASURE:")
-    val fmeasure = ExternalValidation.getFMeasure(df)
-    println(fmeasure)
+        println("MUTUAL INFORMATION:")
+        val mutualInformation = ExternalValidation.getMutualInformation(df)
+        println(mutualInformation)
 
-    println("VARIATION OF INFORMATION:")
-    val variationOfInformation = ExternalValidation.getVariationOfInformation(df)
-    println(variationOfInformation)
+        println("F-MEASURE:")
+        val fmeasure = ExternalValidation.getFMeasure(df)
+        println(fmeasure)
 
-    println("GOODMAN-KRUSKAL:")
-    val goodmanKruskal = ExternalValidation.getGoodmanKruskal(df)
-    println(goodmanKruskal)
+        println("VARIATION OF INFORMATION:")
+        val variationOfInformation = ExternalValidation.getVariationOfInformation(df)
+        println(variationOfInformation)
 
-    println("RAND INDEX:")
-    val randIndex = ExternalValidation.getRandIndex(df)
-    println(randIndex)
+        println("GOODMAN-KRUSKAL:")
+        val goodmanKruskal = ExternalValidation.getGoodmanKruskal(df)
+        println(goodmanKruskal)
 
-    println("ADJUSTED RAND INDEX:")
-    val adjustedRandIndex = ExternalValidation.getAdjustedRandIndex(df)
-    println(adjustedRandIndex)
+        println("RAND INDEX:")
+        val randIndex = ExternalValidation.getRandIndex(df)
+        println(randIndex)
 
-    println("JACCARD:")
-    val jaccard = ExternalValidation.getJaccard(df)
-    println(jaccard)
+        println("ADJUSTED RAND INDEX:")
+        val adjustedRandIndex = ExternalValidation.getAdjustedRandIndex(df)
+        println(adjustedRandIndex)
 
-    println("FOWLKES-MALLOWS:")
-    val fowlkesMallows = ExternalValidation.getFowlkesMallows(df)
-    println(fowlkesMallows)
+        println("JACCARD:")
+        val jaccard = ExternalValidation.getJaccard(df)
+        println(jaccard)
 
-    println("HUBERT:")
-    val hubert = ExternalValidation.getHubert(df)
-    println(hubert)
+        println("FOWLKES-MALLOWS:")
+        val fowlkesMallows = ExternalValidation.getFowlkesMallows(df)
+        println(fowlkesMallows)
 
-    println("MINKOWSKI:")
-    val minkowski = ExternalValidation.getMinkowski(df)
-    println(minkowski)
+        println("HUBERT:")
+        val hubert = ExternalValidation.getHubert(df)
+        println(hubert)
 
+        println("MINKOWSKI:")
+        val minkowski = ExternalValidation.getMinkowski(df)
+        println(minkowski)
+    */
 
+    import spark.implicits._
+
+    val res = FeatureStatistics.getTotalChiCross(List("class"), df, numClusters, "")
+    //val res = FeatureStatistics.getTotalChi(List("class"), "",df,df, numClusters, "")
 
   }
 

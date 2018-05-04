@@ -28,6 +28,13 @@ object FeatureStatistics extends Logging {
 
   }
 
+
+  // Back ticks can't exist in DataFrame column names, therefore drop them. To be able to accept
+  // special keywords and `.`, wrap the column names in ``.
+  def cleanColumnName(name: String): String = {
+    s"`$name`"
+  }
+
   /**
     * Calculate the Squared Chi statistic
     *
@@ -37,11 +44,11 @@ object FeatureStatistics extends Logging {
     */
   def getSquaredChi(data: DataFrame, numClusters: Int): Double = {
 
-    val dropedData = data.drop("prediction")
+    val dropedData = data.drop("prediction","prediction_class","class_prediction")
 
     val columnsNames = dropedData.columns
 
-    val dfwithSum = dropedData.withColumn("sum", columnsNames.map(col)
+    val dfwithSum = dropedData.withColumn("sum", columnsNames.map(cleanColumnName(_)).map(col)
       .reduce((c1, c2) => c1 + c2)).cache()
 
     val spark = SparkSession.builder().getOrCreate()
@@ -89,7 +96,7 @@ object FeatureStatistics extends Logging {
     val columnNames = data.columns
 
     columnNames.map { colName =>
-      data.select(sum(colName))
+      data.select(sum(cleanColumnName(colName)))
         .first()
         .getDouble(0)
     }
@@ -211,6 +218,38 @@ object FeatureStatistics extends Logging {
 
   }
 
+  def getTotalChiCross(featureNameList: List[String], dfResults: DataFrame, numClusters: Int, destino: String): String = {
+
+    featureNameList.map { featureName =>
+
+      val dfResultsRenamed = dfResults.withColumnRenamed(featureName, "class")
+
+      val dfContingencies = Feature.getContingencies(dfResultsRenamed)
+
+      val dfByCluster = dfContingencies._1
+      val dfByFeature = dfContingencies._2
+
+      println("dfByCluster")
+      dfByCluster.show()
+      dfByCluster.repartition(1).write
+        .option("header", "true")
+        .option("delimiter", "\t")
+        .csv(s"$destino-DFClusters-$numClusters")
+
+      println("dfByFeature")
+      dfByFeature.show()
+      dfByFeature.repartition(1).write
+        .option("header", "true")
+        .option("delimiter", "\t")
+        .csv(s"$destino-DFFeatures-$numClusters")
+
+      calculateTotalChi(dfByCluster, dfByFeature, numClusters).toString()
+
+    }.reduce(_ + _)
+
+  }
+
+
   /**
     * Calculate the Squared Chi statistic of a dataframe kmeans result
     *
@@ -225,6 +264,7 @@ object FeatureStatistics extends Logging {
     calculateTotalChi(dfByCluster, dfByFeature, numClusters).toString()
 
   }
+
 
   def calculateMatrixChi(dataRow: DataFrame, dataColum: DataFrame): (Double, Double) = {
     val v1 = getChiByRows(dataRow)

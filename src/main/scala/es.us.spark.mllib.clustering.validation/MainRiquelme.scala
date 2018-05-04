@@ -2,7 +2,7 @@ package es.us.spark.mllib.clustering.validation
 
 import es.us.spark.mllib.Utils
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.ml.clustering.KMeans
+import org.apache.spark.ml.clustering.{BisectingKMeans, GaussianMixture, KMeans, LDA}
 import org.apache.spark.ml.feature.VectorAssembler
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.types.DoubleType
@@ -43,14 +43,16 @@ object MainRiquelme {
     val emoticonsFile = "C:\\datasets\\Validation\\multilabel\\emotions\\emotions.dat"
     val sceneFile = "C:\\datasets\\Validation\\multilabel\\scene\\scene.dat"
 
+    val recordFile = "C:\\datasets\\Validation\\caepia\\RecordLinkage\\block_1\\block_1.csv"
+
     val numIterations = 1000
-    var minClusters = 4
-    var maxClusters = 5
-    var origen = columnFile
-    var destino: String = Utils.whatTimeIsIt() + "-columnFile"
+    var minClusters = 2
+    var maxClusters = 6
+    var origen = breastFile
+    var destino: String = Utils.whatTimeIsIt() + "-breastFile"
     var idIndex = -1
-    var classIndex = 6
-    var delimiter = " "
+    var classIndex = 10
+    var delimiter = ","
 
     if (args.length > 3) {
       minClusters = args(0).toInt
@@ -92,6 +94,7 @@ object MainRiquelme {
       println("*******************************")
       println("Configuration:")
       println("\tCLUSTERS: " + numClusters)
+      println(s"\tFile: $origen")
       println("Running...\n")
       println("Loading file..")
 
@@ -100,11 +103,15 @@ object MainRiquelme {
       val df_kmeans = featureAssembler.transform(data).select("class", "features")
       //df_kmeans.show()
 
-      val kmeans = new KMeans().setK(numClusters)
+      //val clusteringResult = new KMeans()
+//      val clusteringResult = new GaussianMixture()
+      //val clusteringResult = new LDA()
+      val clusteringResult = new BisectingKMeans()
+        .setK(numClusters)
         .setSeed(1L)
         .setMaxIter(numIterations)
         .setFeaturesCol("features")
-      val model = kmeans.fit(df_kmeans)
+      val model = clusteringResult.fit(df_kmeans)
 
       var predictionResult = model.transform(df_kmeans)
         .select("class", "prediction")
@@ -124,7 +131,7 @@ object MainRiquelme {
         .csv(s"$destino-kmeansRes-$numClusters")
 
 
-      val res = FeatureStatistics.getTotalChi(List("class"), "", predictionResult, predictionResult, numClusters, destino)
+      val res = FeatureStatistics.getTotalChiCross(List("class"), predictionResult, numClusters, destino)
       (numClusters, res)
 
     }
