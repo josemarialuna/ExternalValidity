@@ -24,7 +24,7 @@ object MainTest {
     var threshold = 20f
 
 
-    if (args.length > 1) {
+    if (args.length > 3) {
       featuresFile = args(0)
       clusterResultFile = args(1)
       numClusters = args(2).toInt
@@ -48,7 +48,8 @@ object MainTest {
     //val df = spark.sparkContext.parallelize(Seq((10L, 0L, 0L), (0L, 10L, 0L), (0L, 0L, 10L))).toDF("A", "B", "C")
     //val df = spark.sparkContext.parallelize(Seq((33.0, 33.0, 33.0), (33.0, 33.0, 33.0), (33.0, 33.0, 33.0))).toDF("A", "B", "C")
 
-    val df = spark.sparkContext.parallelize(Seq(("A", 0),("A", 0),("A", 0),("B",0),("B",0),("B",0),("C",0),("C",0),("C",0),("C",0),("A",1),("B",1),("B",1))).toDF("class", "prediction")
+    //val df = spark.sparkContext.parallelize(Seq(("A", 0),("A", 0),("A", 0),("B",0),("B",0),("B",0),("C",0),("C",0),("C",0),("C",0),("A",1),("B",1),("B",1))).toDF("class", "prediction")
+    val df = spark.sparkContext.parallelize(Seq((1.0, 0),(1.0, 0),(1.0, 0),(2.0,0),(2.0,0),(2.0,0),(3.0,0),(3.0,0),(3.0,0),(3.0,0),(1.0,1),(2.0,1),(2.0,1))).toDF("class", "prediction")
 
     /*
         println("ENTROPY:")
@@ -100,7 +101,6 @@ object MainTest {
         println(minkowski)
     */
 
-    import spark.implicits._
 
     val res = FeatureStatistics.getTotalChiCross(List("class"), df, numClusters, "")
     //val res = FeatureStatistics.getTotalChi(List("class"), "",df,df, numClusters, "")

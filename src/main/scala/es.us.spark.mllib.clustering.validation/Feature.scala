@@ -1,12 +1,9 @@
 package es.us.spark.mllib.clustering.validation
 
-import java.util.NoSuchElementException
-
-import es.us.spark.mllib.Utils
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.functions._
-import org.apache.spark.sql.types._
-import org.apache.spark.sql.{DataFrame, Row, SparkSession}
+import org.apache.spark.sql.{DataFrame, Row}
+
 
 /**
   * Created by Josem on 27/09/2017.
@@ -14,196 +11,19 @@ import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 object Feature extends Logging {
 
   /**
-    * Returns a dataframe with the relative frequency by cluster
+    * Return a String with the values of chi square of both contingency tables separated by an "+" symbol
     *
-    * @param featureName  Name of the column
-    * @param list_feature List of the names of the distinct features of a column
-    * @param dfJoin       Full Dataframe that includes the cluster results and the features of the original dataset
-    * @param numClusters  The number of clusters
-    * @return The total number of cells that exceed the threshold
-    * @example getRatio(list_cities, dfResults, 6, 20)
+    * @param featureNameList List of feature names of the data
+    * @param dfResults       DataFrame with "prediction" column and the columns of features
+    * @param numClusters     Total umber of clusters
+    * @param destino         Destiny path for the results
+    * @example getContingencies(dataRow, dataColumn, numClusters)
     */
-  def calculateRatioByCluster(featureName: String, list_feature: Array[String], dfJoin: DataFrame, numClusters: Int): DataFrame = {
-
-    //require(numClusters > 1, "The number of cluster should be more than 1.")
-
-    logInfo(s"Processing ratio by cluster: $featureName..")
-
-    val dfTotalClusters = dfJoin.groupBy("prediction")
-      .count()
-      .withColumnRenamed("count", "totalCluster")
-      .cache()
-
-    val rows = list_feature.map { feature =>
-
-      val dfFeatures = dfJoin.groupBy("prediction", s"$featureName")
-        .count()
-        .withColumnRenamed("count", "totalFeatureCluster")
-
-      val dfDefinitivo = dfTotalClusters.join(dfFeatures, "prediction")
-        .withColumn("abs", col("totalFeatureCluster") / col("totalCluster") * 100)
-        .select("prediction", s"$featureName", "abs")
-        .sort("prediction", s"$featureName")
-        .repartition(col("prediction"))
-      //dfDefinitivo.show(20)
-
-
-      val columna = for (cluster <- 0 until numClusters) yield {
-
-        val clusterRatio = try {
-          dfDefinitivo.select("abs")
-            .where(s"prediction == '$cluster'")
-            .where(s"$featureName == '$feature'")
-            .first()
-            .getDouble(0)
-        } catch {
-          case ex: NoSuchElementException => {
-            0.0
-          }
-        }
-
-        (cluster, clusterRatio)
-      }
-      //
-      //      dfDefinitivo.unpersist()
-
-      val spark = SparkSession.builder().getOrCreate()
-
-
-      val schema = Array(
-        StructField("prediction", IntegerType, true),
-        StructField(s"$feature", DoubleType, true))
-
-      val customSchema = StructType(schema)
-
-      val columnaRDD = spark.sparkContext.parallelize(columna)
-      val filas = columnaRDD.map(Row.fromTuple(_))
-
-      logInfo(s"\tValue: $feature DONE!")
-
-
-      spark.createDataFrame(filas, customSchema)
-
-    }
-
-    dfTotalClusters.unpersist()
-
-    logInfo(s"$featureName finished!\n")
-    rows.reduce(_.join(_, "prediction")).sort("prediction")
-  }
-
-  /**
-    * Returns a dataframe with the relative frequency by cluster
-    *
-    * @param featureName  Name of the column
-    * @param list_feature List of the names of the distinct features of a column
-    * @param dfJoin       Full Dataframe that includes the cluster results and the features of the original dataset
-    * @param numClusters  The number of clusters
-    * @return The total number of cells that exceed the threshold
-    * @example calculateColocationsRatioByCluster(list_cities, dfResults, 6, 20)
-    */
-  def calculateColocationsRatioByCluster(featureName: String, list_feature: Array[String], dfJoin: DataFrame, numClusters: Int): DataFrame = {
-
-    require(numClusters > 1, "The number of cluster should be more than 1.")
-
-    logInfo(s"Processing colocation ratio by cluster: $featureName..")
-
-    //DF: cluster number | total of colocations by cluster
-    val dfTotalClusters = dfJoin.groupBy("prediction")
-      .agg(sum("coloc"))
-      .withColumnRenamed("sum(coloc)", "totalCluster")
-      .cache()
-    //    dfTotalClusters.printSchema()
-    //dfTotalClusters.show(20)
-
-    val rows = list_feature.map { feature =>
-
-      //DF: cluster number | feature | total of colocations by cluster and feature
-      val dfFeatures = dfJoin.groupBy("prediction", s"$featureName")
-        .agg(sum("coloc"))
-        .withColumnRenamed("sum(coloc)", "totalFeatureCluster")
-      //      dfFeatures.printSchema()
-      //dfFeatures.show(20)
-
-
-      val dfDefinitivo = dfTotalClusters.join(dfFeatures, "prediction")
-        .withColumn("abs", col("totalFeatureCluster") / col("totalCluster") * 100)
-        .select("prediction", s"$featureName", "abs")
-        .sort("prediction", s"$featureName")
-        .repartition(col("prediction"))
-        .cache()
-      //dfDefinitivo.show(50)
-
-
-      val columna = for (cluster <- 0 until numClusters) yield {
-
-        val clusterRatio = try {
-          dfDefinitivo.select("abs")
-            .where(s"prediction == '$cluster'")
-            .where(s"$featureName == '$feature'")
-            .first()
-            .getDouble(0)
-        } catch {
-          case ex: NoSuchElementException => {
-            0.0
-          }
-        }
-
-        (cluster, clusterRatio)
-      }
-
-      dfDefinitivo.unpersist()
-
-      val spark = SparkSession.builder().getOrCreate()
-
-
-      val schema = Array(
-        StructField("prediction", IntegerType, true),
-        StructField(s"$feature", DoubleType, true))
-
-      val customSchema = StructType(schema)
-
-      val columnaRDD = spark.sparkContext.parallelize(columna)
-      val filas = columnaRDD.map(Row.fromTuple(_))
-
-      logInfo(s"\tValue: $feature DONE!")
-
-
-      spark.createDataFrame(filas, customSchema)
-
-    }
-
-    dfTotalClusters.unpersist()
-
-    logInfo(s"$featureName finished!\n")
-    rows.reduce(_.join(_, "prediction")).sort("prediction")
-  }
-
-  /**
-    * Calculate and save the dataframe by cluster
-    *
-    * @param featureName Name of the column
-    * @param dfFeatures  Full Dataframe that includes the cluster results and the features of the original dataset
-    * @param dfJoin      Full Dataframe that includes the cluster results and the features of the original dataset
-    * @param numClusters The number of clusters
-    * @return The total number of cells that exceed the threshold
-    * @example getRatio(list_cities, dfResults, 6, 20)
-    */
-  def getResultsByCluster(featureName: String, dfFeatures: DataFrame, dfJoin: DataFrame, numClusters: Int): DataFrame = {
-
-    val list_feature = dfFeatures.select(featureName).distinct().rdd.map(r => r(0).toString).collect()
-    val dfResult = calculateRatioByCluster(featureName, list_feature, dfJoin, numClusters)
-
-    //dfResult.show(numClusters)
-
-    dfResult
-
-  }
-
 
   def getContingencies(df: DataFrame): (DataFrame, DataFrame) = {
 
     //begin by clusters//////////////////
+    logInfo(s"Calculating crosstab by cluster..")
     val dfCrossCluster = df.stat.crosstab("class", "prediction").sort("class_prediction")
 
     //gipsy fabs method
@@ -216,13 +36,15 @@ object Feature extends Logging {
     })
 
     val dfByClusters = dfRenamed2.select(col("class_prediction") +: columnsModify2: _*)
+    logInfo(s"Crosstab by cluster: Done")
     //End by clusters//////////////////
 
 
     //begin by class//////////////////
+    logInfo(s"Calculating crosstab by class..")
     val dfCrossClass = df.stat.crosstab("prediction", "class").sort("prediction_class")
 
-    var dfRenamed = dfCrossClass.columns.foldLeft(dfCrossClass)((curr, n) => curr.withColumnRenamed(n, n.replaceAll("\\.", "_")))
+    val dfRenamed = dfCrossClass.columns.foldLeft(dfCrossClass)((curr, n) => curr.withColumnRenamed(n, n.replaceAll("\\.", "_")))
     val dfValues = dfRenamed.drop("prediction_class")
 
     val columnsModify = dfValues.columns.map(col).map(colName => {
@@ -232,6 +54,7 @@ object Feature extends Logging {
 
 
     val dfByColumns = dfRenamed.select(col("prediction_class") +: columnsModify: _*)
+    logInfo(s"Crosstab by class: Done")
     //End by columns//////////////////
 
 
@@ -240,25 +63,219 @@ object Feature extends Logging {
   }
 
 
-  /**
-    * Calculate and save the dataframe by cluster
-    *
-    * @param dfClusteringResult Full Dataframe that includes the cluster results and the features of the original dataset
-    * @param numClusters        The number of clusters
-    * @return The total number of cells that exceed the threshold
-    * @example getRatio(list_cities, dfResults, 6, 20)
+  /*
+    /**
+      * Returns a dataframe with the relative frequency by cluster
+      *
+      * @param featureName  Name of the column
+      * @param list_feature List of the names of the distinct features of a column
+      * @param dfJoin       Full Dataframe that includes the cluster results and the features of the original dataset
+      * @param numClusters  The number of clusters
+      * @return The total number of cells that exceed the threshold
+      * @example getRatio(list_cities, dfResults, 6, 20)
+      */
+    def calculateRatioByCluster(featureName: String, list_feature: Array[String], dfJoin: DataFrame, numClusters: Int): DataFrame = {
+
+      //require(numClusters > 1, "The number of cluster should be more than 1.")
+
+      logInfo(s"Processing ratio by cluster: $featureName..")
+
+      val dfTotalClusters = dfJoin.groupBy("prediction")
+        .count()
+        .withColumnRenamed("count", "totalCluster")
+        .cache()
+
+      val rows = list_feature.map { feature =>
+
+        val dfFeatures = dfJoin.groupBy("prediction", s"$featureName")
+          .count()
+          .withColumnRenamed("count", "totalFeatureCluster")
+
+        val dfDefinitivo = dfTotalClusters.join(dfFeatures, "prediction")
+          .withColumn("abs", col("totalFeatureCluster") / col("totalCluster") * 100)
+          .select("prediction", s"$featureName", "abs")
+          .sort("prediction", s"$featureName")
+          .repartition(col("prediction"))
+        //dfDefinitivo.show(20)
+
+
+        val columna = for (cluster <- 0 until numClusters) yield {
+
+          val clusterRatio = try {
+            dfDefinitivo.select("abs")
+              .where(s"prediction == '$cluster'")
+              .where(s"$featureName == '$feature'")
+              .first()
+              .getDouble(0)
+          } catch {
+            case ex: NoSuchElementException => {
+              0.0
+            }
+          }
+
+          (cluster, clusterRatio)
+        }
+        //
+        //      dfDefinitivo.unpersist()
+
+        val spark = SparkSession.builder().getOrCreate()
+
+
+        val schema = Array(
+          StructField("prediction", IntegerType, true),
+          StructField(s"$feature", DoubleType, true))
+
+        val customSchema = StructType(schema)
+
+        val columnaRDD = spark.sparkContext.parallelize(columna)
+        val filas = columnaRDD.map(Row.fromTuple(_))
+
+        logInfo(s"\tValue: $feature DONE!")
+
+
+        spark.createDataFrame(filas, customSchema)
+
+      }
+
+      dfTotalClusters.unpersist()
+
+      logInfo(s"$featureName finished!\n")
+      rows.reduce(_.join(_, "prediction")).sort("prediction")
+    }
     */
-  def getResultsByCluster(dfClusteringResult: DataFrame, numClusters: Int): DataFrame = {
+  /*
+    /**
+      * Returns a dataframe with the relative frequency by cluster
+      *
+      * @param featureName  Name of the column
+      * @param list_feature List of the names of the distinct features of a column
+      * @param dfJoin       Full Dataframe that includes the cluster results and the features of the original dataset
+      * @param numClusters  The number of clusters
+      * @return The total number of cells that exceed the threshold
+      * @example calculateColocationsRatioByCluster(list_cities, dfResults, 6, 20)
+      */
+    def calculateColocationsRatioByCluster(featureName: String, list_feature: Array[String], dfJoin: DataFrame, numClusters: Int): DataFrame = {
 
-    val list_feature = dfClusteringResult.select("class").distinct().rdd.map(r => r(0).toString).collect()
-    val dfResult = calculateRatioByCluster("class", list_feature, dfClusteringResult, numClusters)
+      require(numClusters > 1, "The number of cluster should be more than 1.")
 
-    //dfResult.show(numClusters)
+      logInfo(s"Processing colocation ratio by cluster: $featureName..")
 
-    dfResult
+      //DF: cluster number | total of colocations by cluster
+      val dfTotalClusters = dfJoin.groupBy("prediction")
+        .agg(sum("coloc"))
+        .withColumnRenamed("sum(coloc)", "totalCluster")
+        .cache()
+      //    dfTotalClusters.printSchema()
+      //dfTotalClusters.show(20)
 
-  }
+      val rows = list_feature.map { feature =>
 
+        //DF: cluster number | feature | total of colocations by cluster and feature
+        val dfFeatures = dfJoin.groupBy("prediction", s"$featureName")
+          .agg(sum("coloc"))
+          .withColumnRenamed("sum(coloc)", "totalFeatureCluster")
+        //      dfFeatures.printSchema()
+        //dfFeatures.show(20)
+
+
+        val dfDefinitivo = dfTotalClusters.join(dfFeatures, "prediction")
+          .withColumn("abs", col("totalFeatureCluster") / col("totalCluster") * 100)
+          .select("prediction", s"$featureName", "abs")
+          .sort("prediction", s"$featureName")
+          .repartition(col("prediction"))
+          .cache()
+        //dfDefinitivo.show(50)
+
+
+        val columna = for (cluster <- 0 until numClusters) yield {
+
+          val clusterRatio = try {
+            dfDefinitivo.select("abs")
+              .where(s"prediction == '$cluster'")
+              .where(s"$featureName == '$feature'")
+              .first()
+              .getDouble(0)
+          } catch {
+            case ex: NoSuchElementException => {
+              0.0
+            }
+          }
+
+          (cluster, clusterRatio)
+        }
+
+        dfDefinitivo.unpersist()
+
+        val spark = SparkSession.builder().getOrCreate()
+
+
+        val schema = Array(
+          StructField("prediction", IntegerType, true),
+          StructField(s"$feature", DoubleType, true))
+
+        val customSchema = StructType(schema)
+
+        val columnaRDD = spark.sparkContext.parallelize(columna)
+        val filas = columnaRDD.map(Row.fromTuple(_))
+
+        logInfo(s"\tValue: $feature DONE!")
+
+
+        spark.createDataFrame(filas, customSchema)
+
+      }
+
+      dfTotalClusters.unpersist()
+
+      logInfo(s"$featureName finished!\n")
+      rows.reduce(_.join(_, "prediction")).sort("prediction")
+    }
+    */
+  /*
+    /**
+      * Calculate and save the dataframe by cluster
+      *
+      * @param featureName Name of the column
+      * @param dfFeatures  Full Dataframe that includes the cluster results and the features of the original dataset
+      * @param dfJoin      Full Dataframe that includes the cluster results and the features of the original dataset
+      * @param numClusters The number of clusters
+      * @return The total number of cells that exceed the threshold
+      * @example getRatio(list_cities, dfResults, 6, 20)
+      */
+    def getResultsByCluster(featureName: String, dfFeatures: DataFrame, dfJoin: DataFrame, numClusters: Int): DataFrame = {
+
+      val list_feature = dfFeatures.select(featureName).distinct().rdd.map(r => r(0).toString).collect()
+      val dfResult = calculateRatioByCluster(featureName, list_feature, dfJoin, numClusters)
+
+      //dfResult.show(numClusters)
+
+      dfResult
+
+    }
+  */
+
+
+  /*
+    /**
+      * Calculate and save the dataframe by cluster
+      *
+      * @param dfClusteringResult Full Dataframe that includes the cluster results and the features of the original dataset
+      * @param numClusters        The number of clusters
+      * @return The total number of cells that exceed the threshold
+      * @example getRatio(list_cities, dfResults, 6, 20)
+      */
+    def getResultsByCluster(dfClusteringResult: DataFrame, numClusters: Int): DataFrame = {
+
+      val list_feature = dfClusteringResult.select("class").distinct().rdd.map(r => r(0).toString).collect()
+      val dfResult = calculateRatioByCluster("class", list_feature, dfClusteringResult, numClusters)
+
+      //dfResult.show(numClusters)
+
+      dfResult
+
+    }
+  */
+  /*
   /**
     * Calculate and save the dataframe by cluster
     *
@@ -289,44 +306,47 @@ object Feature extends Logging {
     logInfo(s"Saved data into folder: $momentum C$numClusters $featureName byCluster")
     dfFeatureResult
   }
+*/
+  /*
+    def saveColocationsResultsByCluster(featureName: String, dfFeatures: DataFrame, dfJoin: DataFrame, numClusters: Int): DataFrame = {
+
+      val momentum = Utils.whatTimeIsIt()
+
+      val list_feature = dfFeatures.select(featureName).distinct().rdd.map(r => r(0).toString).collect()
+      val dfFeatureResult = calculateColocationsRatioByCluster(featureName, list_feature, dfJoin, numClusters)
 
 
-  def saveColocationsResultsByCluster(featureName: String, dfFeatures: DataFrame, dfJoin: DataFrame, numClusters: Int): DataFrame = {
+      logInfo("Saving results into a file..")
+      //dfFeatureResult.show(numClusters)
 
-    val momentum = Utils.whatTimeIsIt()
+      dfFeatureResult.repartition(1).write
+        .option("header", "true")
+        .option("delimiter", "\t")
+        .csv(s"$momentum C$numClusters $featureName byCluster")
 
-    val list_feature = dfFeatures.select(featureName).distinct().rdd.map(r => r(0).toString).collect()
-    val dfFeatureResult = calculateColocationsRatioByCluster(featureName, list_feature, dfJoin, numClusters)
-
-
-    logInfo("Saving results into a file..")
-    //dfFeatureResult.show(numClusters)
-
-    dfFeatureResult.repartition(1).write
-      .option("header", "true")
-      .option("delimiter", "\t")
-      .csv(s"$momentum C$numClusters $featureName byCluster")
-
-    logInfo(s"Saved data into folder: $momentum C$numClusters $featureName byCluster")
-    dfFeatureResult
-  }
-
-  /**
-    * Calculate and save the dataframe by cluster
-    *
-    * @param featureNameList List with the names of the columns
-    * @param dfFeatures      Full Dataframe that includes the cluster results and the features of the original dataset
-    * @param dfJoin          Full Dataframe that includes the cluster results and the features of the original dataset
-    * @param numClusters     The number of clusters
-    * @return The total number of cells that exceed the threshold
-    * @example getRatio(list_cities, dfResults, 6, 20)
+      logInfo(s"Saved data into folder: $momentum C$numClusters $featureName byCluster")
+      dfFeatureResult
+    }
     */
-  def saveResultsByCluster(featureNameList: List[String], dfFeatures: DataFrame, dfJoin: DataFrame, numClusters: Int): Unit = {
+  /*
+    /**
+      * Calculate and save the dataframe by cluster
+      *
+      * @param featureNameList List with the names of the columns
+      * @param dfFeatures      Full Dataframe that includes the cluster results and the features of the original dataset
+      * @param dfJoin          Full Dataframe that includes the cluster results and the features of the original dataset
+      * @param numClusters     The number of clusters
+      * @return The total number of cells that exceed the threshold
+      * @example getRatio(list_cities, dfResults, 6, 20)
+      */
+    def saveResultsByCluster(featureNameList: List[String], dfFeatures: DataFrame, dfJoin: DataFrame, numClusters: Int): Unit = {
 
-    featureNameList.map(saveResultsByCluster(_, dfFeatures, dfJoin, numClusters))
+      featureNameList.map(saveResultsByCluster(_, dfFeatures, dfJoin, numClusters))
 
-  }
+    }
+  */
 
+  /*
   /**
     * Returns a dataframe with the relative frequency by feature
     *
@@ -405,7 +425,8 @@ object Feature extends Logging {
     logInfo(s"$featureName finished!\n")
     rows.reduce(_.join(_, "prediction")).sort("prediction")
   }
-
+*/
+  /*
   /**
     * Returns a dataframe with the relative frequency by feature
     *
@@ -486,7 +507,8 @@ object Feature extends Logging {
     rows.reduce(_.join(_, "prediction")).sort("prediction")
   }
 
-
+*/
+  /*
   /**
     * Return the dataframe by cluster
     *
@@ -526,7 +548,9 @@ object Feature extends Logging {
 
   }
 
+*/
 
+  /*
   /**
     * Calculate and save the dataframe by cluster
     *
@@ -558,7 +582,8 @@ object Feature extends Logging {
     logInfo(s"Saved data into folder: $fileName")
     dfFeatureResult
   }
-
+*/
+  /*
   def saveColocationsResultsByFeature(featureName: String, dfFeatures: DataFrame, dfJoin: DataFrame, numClusters: Int): DataFrame = {
 
     val momentum = Utils.whatTimeIsIt()
@@ -579,7 +604,8 @@ object Feature extends Logging {
     logInfo(s"Saved data into folder: $fileName")
     dfFeatureResult
   }
-
+*/
+  /*
   /**
     * Calculate and save the dataframe by cluster
     *
@@ -595,7 +621,7 @@ object Feature extends Logging {
     featureNameList.map(saveResultsByFeature(_, dfFeatures, dfJoin, numClusters))
 
   }
-
+*/
   //
   //  def getReport(dfOrigen: DataFrame, dfDestino: DataFrame): Dataset[String] = {
   //
