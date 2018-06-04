@@ -1,5 +1,4 @@
-package es.us.spark.mllib.clustering.validation
-
+import es.us.spark.mllib.clustering.validation.FeatureStatistics
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 

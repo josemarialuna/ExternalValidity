@@ -1,5 +1,3 @@
-package es.us.spark.mllib.clustering.validation
-
 import es.us.spark.mllib.Utils
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
@@ -86,9 +84,11 @@ object MainExternalValidity {
     val hepFile = "C:\\datasets\\Validation\\caepia\\RecordLinkage\\block_1\\block_1.csv"
     val gasFile = "C:\\datasets\\Validation\\caepia\\RecordLinkage\\block_1\\block_1.csv"
 
+    val empleo1 = "C:\\Users\\Josem\\Dropbox\\PHD\\Proyectos\\2017-08 - Clustering Trabajadores BACK\\New Dataset por Provincias\\2014-16\\matrizRelativaPor1"
+
     val minClusters = 2
-    val maxClusters = 10
-    val origen = column3CFile
+    val maxClusters = 20
+    val origen = empleo1
     val destino: String = Utils.whatTimeIsIt()
     var idIndex = "-1"
     val classIndex = 0

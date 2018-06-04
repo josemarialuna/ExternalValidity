@@ -1,8 +1,7 @@
-package es.us.spark.mllib.clustering.validation
-
 import es.us.spark.mllib.Utils
+import es.us.spark.mllib.clustering.validation.FeatureStatistics
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.ml.clustering.{BisectingKMeans, GaussianMixture, KMeans, LDA}
+import org.apache.spark.ml.clustering.BisectingKMeans
 import org.apache.spark.ml.feature.VectorAssembler
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.types.DoubleType
@@ -10,7 +9,7 @@ import org.apache.spark.sql.types.DoubleType
 /**
   * Created by Josem on 26/09/2017.
   */
-object MainLiterature {
+object MainRiquelme {
   def main(args: Array[String]): Unit = {
 
     Logger.getLogger("org").setLevel(Level.OFF)
@@ -37,24 +36,24 @@ object MainLiterature {
     val relaxFile = "C:\\datasets\\Validation\\planing_relax.txt"
     val susyFile = "C:\\datasets\\Validation\\SUSY.csv"
 
+    val synthetic = "C:\\datasets\\Validation\\Synthetics\\C3-D5-I1000"
     val susy_limited = "C:\\Users\\Josem\\Documents\\ExternalValidity\\SUSY_limited2"
 
     val emoticonsFile = "C:\\datasets\\Validation\\multilabel\\emotions\\emotions.dat"
     val sceneFile = "C:\\datasets\\Validation\\multilabel\\scene\\scene.dat"
 
-    val synthetic = "C:\\datasets\\Validation\\Synthetics\\C9-D5-I10000"
-
+    val recordFile = "C:\\datasets\\Validation\\caepia\\RecordLinkage\\block_1\\block_1.csv"
 
     val numIterations = 1000
     var minClusters = 2
-    var maxClusters = 10
-    var origen = emoticonsFile
-    var destino: String = Utils.whatTimeIsIt() + "-emoticonsFile"
+    var maxClusters = 13
+    var origen = data_UserFile
+    var destino: String = Utils.whatTimeIsIt() + "-data_UserFile"
     var idIndex = -1
-    var classIndex = 294
-    var delimiter = ","
+    var classIndex = 5
+    var delimiter = ";"
 
-    if (args.length > 4) {
+    if (args.length > 3) {
       minClusters = args(0).toInt
       maxClusters = args(1).toInt
       origen = args(2)
@@ -63,8 +62,6 @@ object MainLiterature {
       delimiter = args(5)
       idIndex = args(6).toInt
     }
-
-    println("Loading file..")
 
     val dataRead = spark.read
       .option("header", "false")
@@ -75,16 +72,16 @@ object MainLiterature {
     dataRead.printSchema()
 
     //Si el fichero tiene indice, se le dropea, si no símplemente cambiamos el nombre a la columna
-    var data = if (idIndex != -1) {
+    val data = if (idIndex != -1) {
       dataRead.drop(s"_c$idIndex")
         .withColumnRenamed(dataRead.columns(classIndex), "class")
     } else {
       dataRead.withColumnRenamed(dataRead.columns(classIndex), "class")
-      //.drop("_c294", "c_295", "c_296", "c_298", "c_299")
+      //.drop("_c72", "c_74", "c_75", "c_76", "c_77")
     }
 
+    //data = data.withColumn("class", when(col("class") > "0", "1").otherwise("0")).cache
 
-    //data = data.withColumn("class", when(col("class") > "0", "1").otherwise("0")).cache()
     //data.show()
     data.printSchema()
 
@@ -98,7 +95,7 @@ object MainLiterature {
       println("\tCLUSTERS: " + numClusters)
       println(s"\tFile: $origen")
       println("Running...\n")
-
+      println("Loading file..")
 
       val featureColumns = data.drop("class").columns
       val featureAssembler = new VectorAssembler().setInputCols(featureColumns).setOutputCol("features")
@@ -106,8 +103,9 @@ object MainLiterature {
       //df_kmeans.show()
 
       //val clusteringResult = new KMeans()
+//      val clusteringResult = new GaussianMixture()
+      //val clusteringResult = new LDA()
       val clusteringResult = new BisectingKMeans()
-        //val clusteringResult = new GaussianMixture()
         .setK(numClusters)
         .setSeed(1L)
         .setMaxIter(numIterations)
@@ -124,31 +122,24 @@ object MainLiterature {
       println("TIEMPO TOTAL: " + elapsed)
       println("Cluster DONE!")
 
-      val contingencyTable = predictionResult.stat.crosstab("prediction", "class")
-
-      //      val contingencyTable = ExternalValidation.getContingencyMatrix(predictionResult, numClusters)
-
-      println("contingencyTable")
-      //      contingencyTable.printSchema()
-      contingencyTable.show()
-      contingencyTable.repartition(1).write
+      //Featuring
+      predictionResult.show()
+      predictionResult.repartition(1).write
         .option("header", "true")
         .option("delimiter", "\t")
-        .csv(s"$destino-contingencyTable-$numClusters")
+        .csv(s"$destino-kmeansRes-$numClusters")
 
-      val res = ExternalValidation.calculateExternalIndices(contingencyTable.drop("prediction_class"))
+
+      val res = FeatureStatistics.getTotalChiCross(List("class"), predictionResult, numClusters, destino)
       (numClusters, res)
-      //println(res.toString)
-
 
     }
-
     println("Saving results..")
     spark.sparkContext.parallelize(resultados)
+      .map(x => x._1 + "\t" + x._2.split(",").mkString("\t").replace("(", "").replace(")", "\t"))
       .repartition(1)
-      .mapValues(_.toString().replace("(", "").replace(")", ""))
-      .map(x => x._1.toInt + "\t" + x._2)
-      .saveAsTextFile(destino + "-ExternalIndices")
+      .saveAsTextFile(s"$destino-loopingChi")
 
   }
+
 }
