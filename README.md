@@ -1,4 +1,4 @@
-# ExternalValidity
+# External Clustering Validity Indices
 This package contains the code for executing 13 external clustering validity indices in Spark. The package includes the following índices:
 * Chi Index
 * Entropy
