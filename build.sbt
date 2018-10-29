@@ -3,10 +3,9 @@ name := "ExternalValidity"
 
 version := "1.0"
 
-scalaVersion := "2.11.8"
+scalaVersion := "2.11.12"
+val sparkVersion = "2.3.2"
 
-
-val sparkVersion = "2.2.0"
 
 //LOCAL
 libraryDependencies ++= Seq(

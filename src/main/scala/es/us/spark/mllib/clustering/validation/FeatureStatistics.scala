@@ -175,11 +175,11 @@ object FeatureStatistics extends Logging {
 
       println("Crosstab by cluster")
       dfByCluster.show()
-      logInfo(s"Saving crosstab by cluster into $destino-DFClusters-$numClusters..")
+      logInfo(s"Saving crosstab by cluster into $destino-DFClusters-${numClusters}C..")
       dfByCluster.repartition(1).write
         .option("header", "true")
         .option("delimiter", "\t")
-        .csv(s"$destino-DFClusters-$numClusters")
+        .csv(s"$destino-${numClusters}C-$featureName-DFClusters")
       logInfo(s"Done")
 
       println("Crosstab by class")
@@ -188,7 +188,7 @@ object FeatureStatistics extends Logging {
       dfByFeature.repartition(1).write
         .option("header", "true")
         .option("delimiter", "\t")
-        .csv(s"$destino-DFFeatures-$numClusters")
+        .csv(s"$destino-${numClusters}C-$featureName-DFFeatures")
       logInfo(s"Done")
 
       calculateTotalChi(dfByCluster, dfByFeature, numClusters).toString()
