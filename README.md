@@ -1,6 +1,6 @@
 # External Clustering Validity Indices
 This package contains the code for executing 13 external clustering validity indices in Spark. The package includes the following índices:
-* Chi Index
+* **Chi Index**
 * Entropy
 * Purity
 * Mutual-Information
@@ -15,8 +15,6 @@ This package contains the code for executing 13 external clustering validity ind
 * Minkowski
 
 The cluster indices can be executed using K-means and Bisecting K-Means from Spark MLlib, and Linkage method.
-
-Please, cite as: 
 
 ## Getting Started
 
