@@ -87,71 +87,71 @@ object MainExternalValidity {
     val empleo1 = "C:\\Users\\Josem\\Dropbox\\PHD\\Proyectos\\2017-08 - Clustering Trabajadores BACK\\New Dataset por Provincias\\2014-16\\matrizRelativaPor1"
 
     val minClusters = 2
-    val maxClusters = 20
+    val maxClusters = 10
     val origen = empleo1
     val destino: String = Utils.whatTimeIsIt()
     var idIndex = "-1"
     val classIndex = 0
     val delimiter = " "
 
-    val modality = RIQUELME
-
-    val argumentsList = List(
-      Array[String](minClusters.toString, maxClusters.toString, recordFile, destino + "-recordFile", "7", ";", idIndex)
+    val modality = LITERATURE
+//
+//    val argumentsList = List(
+//      Array[String](minClusters.toString, maxClusters.toString, recordFile, destino + "-recordFile", "7", ";", idIndex),
 //      Array[String]("10", "20", heteroFile, destino + "-heteroFile", "17", ",", idIndex),
 //      Array[String](minClusters.toString, maxClusters.toString, hepFile, destino + "-hepFile", "17", ",", idIndex),
 //      Array[String](minClusters.toString, maxClusters.toString, gasFile, destino + "-gasFile", "17", ",", idIndex)
-    )
+//    )
 
-    //    val argumentsList = List(
-    //      Array[String](minClusters.toString, maxClusters.toString, zooFile, destino + "-zooFile", "17", ",", "0"),
-    //      Array[String](minClusters.toString, maxClusters.toString, bankNoteFile, destino + "-bankNoteFile", "4", ",", idIndex),
-    //      Array[String](minClusters.toString, maxClusters.toString, breastFile, destino + "-breastFile", "10", ",", "0"),
-    //      Array[String](minClusters.toString, maxClusters.toString, column3CFile, destino + "-column3CFile", "6", " ", idIndex),
-    //      Array[String](minClusters.toString, maxClusters.toString, column2CFile, destino + "-column2CFile", "6", " ", idIndex),
-    //      Array[String](minClusters.toString, maxClusters.toString, habermanFile, destino + "-habermanFile", "3", ",", idIndex),
-    //      Array[String](minClusters.toString, maxClusters.toString, irisFile, destino + "-irisFile", "4", ",", idIndex),
-    //      Array[String](minClusters.toString, maxClusters.toString, seedFile, destino + "-seedFile", "7", "\t", idIndex),
-    //      Array[String](minClusters.toString, maxClusters.toString, vehiclesFile, destino + "-vehiclesFile", "18", "\t", idIndex),
-    //      Array[String](minClusters.toString, maxClusters.toString, wineFile, destino + "-wineFile", "0", ",", idIndex),
-    //      Array[String](minClusters.toString, maxClusters.toString, yeastFile, destino + "-yeastFile", "9", "\t", "0"),
-    //      Array[String](minClusters.toString, maxClusters.toString, data_UserFile, destino + "-data_UserFile", "5", ";", idIndex),
-    //      Array[String](minClusters.toString, maxClusters.toString, waveformFile, destino + "-waveformFile", "21", ",", idIndex),
-    //      Array[String](minClusters.toString, maxClusters.toString, relaxFile, destino + "-relaxFile", "12", "\t", idIndex),
-    //      Array[String](minClusters.toString, maxClusters.toString, wineQualityWhite, destino + "-wineQualityWhite", "11", ";", idIndex),
-    //      Array[String](minClusters.toString, maxClusters.toString, wineQualityRed, destino + "-wineQualityRed", "11", ";", idIndex),
-    //      Array[String](minClusters.toString, maxClusters.toString, biodegFile, destino + "-biodegFile", "41", ";", idIndex),
-    //      Array[String](minClusters.toString, maxClusters.toString, breastTissueFile, destino + "-breastTissueFile", "0", ";", idIndex),
-    //      Array[String](minClusters.toString, maxClusters.toString, cloudFile, destino + "-cloudFile", "0", ";", idIndex),
-    //      Array[String](minClusters.toString, maxClusters.toString, diabetesFile, destino + "-diabetesFile", "19", ",", idIndex),
-    //      Array[String](minClusters.toString, maxClusters.toString, ecoliFile, destino + "-ecoliFile", "8", ";", "0"),
-    //      Array[String](minClusters.toString, maxClusters.toString, faultsFile, destino + "-faultsFile", "11", ";", idIndex),
-    //      Array[String](minClusters.toString, maxClusters.toString, airlinesFile, destino + "-airlinesFile", "7", ",", idIndex),
-    //      Array[String](minClusters.toString, maxClusters.toString, bankmarketingFile, destino + "-bankmarketingFile", "16", ",", idIndex),
-    //      Array[String](minClusters.toString, maxClusters.toString, carFile, destino + "-carFile", "1", ",", idIndex),
-    //      Array[String](minClusters.toString, maxClusters.toString, electricityFile, destino + "-electricityFile", "8", ",", idIndex),
-    //      Array[String](minClusters.toString, maxClusters.toString, kddFile, destino + "-kddFile", "0", ",", idIndex),
-    //      Array[String](minClusters.toString, maxClusters.toString, ozoneFile, destino + "-ozoneFile", "72", ",", idIndex),
-    //      Array[String](minClusters.toString, maxClusters.toString, pendigitsFile, destino + "-pendigitsgFile", "16", ",", idIndex),
-    //      Array[String](minClusters.toString, maxClusters.toString, pokerhandFile, destino + "-pokerhandFile", "10", ",", idIndex),
-    //      Array[String](minClusters.toString, maxClusters.toString, spambaseFile, destino + "-spambaseFile", "57", ",", idIndex),
-    //      Array[String](minClusters.toString, maxClusters.toString, wholesaleFile, destino + "-wholesaleFile", "0", ",", idIndex),
-    //      Array[String]("10", "20", vowelFile, destino + "-vowelFile", "13", ";", idIndex),
-    //      Array[String](minClusters.toString, maxClusters.toString, urbanFile, destino + "-urbanFile", "0", ",", idIndex),
-    //      Array[String](minClusters.toString, maxClusters.toString, spamFile, destino + "-spamFile", "57", ",", idIndex),
-    //      Array[String](minClusters.toString, maxClusters.toString, spectometerFile, destino + "-spectometerFile", "1", "\t", "0"),
-    //      Array[String](minClusters.toString, maxClusters.toString, segmentFile, destino + "-segmentFile", "19", " ", idIndex),
-    //      Array[String](minClusters.toString, maxClusters.toString, satimageFile, destino + "-satimageFile", "36", " ", idIndex),
-    //      Array[String](minClusters.toString, maxClusters.toString, optdigits, destino + "-optdigits", "64", ",", idIndex),
-    //      Array[String]("10", "20", movementFile, destino + "-movementFile", "90", ",", idIndex),
-    //      Array[String]("20", "30", letterFile, destino + "-letterFile", "0", ",", idIndex),
-    //      Array[String]("30", "40", leafFile, destino + "-leafFile", "0", ",", idIndex),
-    //      Array[String](minClusters.toString, maxClusters.toString, gestureFile, destino + "-gestureFile", "19", ",", "0"),
-    //      Array[String](minClusters.toString, maxClusters.toString, glassFile, destino + "-glassFile", "10", ",", "0"),
-    //      Array[String](minClusters.toString, maxClusters.toString, forestFile, destino + "-forestFile", "0", ",", idIndex)
-    //    )
-    //        val argumentsList = List(
-    //          Array[String]("12", "15", wineQuality, destino + "-winequality", "11", ";", idIndex))
+        val argumentsList = List(
+//          Array[String](minClusters.toString, maxClusters.toString, zooFile, destino + "-zooFile", "17", ",", "0"),
+//          Array[String](minClusters.toString, maxClusters.toString, bankNoteFile, destino + "-bankNoteFile", "4", ",", idIndex),
+//          Array[String](minClusters.toString, maxClusters.toString, breastFile, destino + "-breastFile", "10", ",", "0"),
+//          Array[String](minClusters.toString, maxClusters.toString, column3CFile, destino + "-column3CFile", "6", " ", idIndex),
+//          Array[String](minClusters.toString, maxClusters.toString, column2CFile, destino + "-column2CFile", "6", " ", idIndex),
+//          Array[String](minClusters.toString, maxClusters.toString, habermanFile, destino + "-habermanFile", "3", ",", idIndex),
+//          Array[String](minClusters.toString, maxClusters.toString, irisFile, destino + "-irisFile", "4", ",", idIndex),
+//          Array[String](minClusters.toString, maxClusters.toString, seedFile, destino + "-seedFile", "7", "\t", idIndex),
+//          Array[String](minClusters.toString, maxClusters.toString, vehiclesFile, destino + "-vehiclesFile", "18", "\t", idIndex),
+//          Array[String](minClusters.toString, maxClusters.toString, wineFile, destino + "-wineFile", "0", ",", idIndex),
+//          Array[String](minClusters.toString, maxClusters.toString, yeastFile, destino + "-yeastFile", "9", "\t", "0"),
+//          Array[String](minClusters.toString, maxClusters.toString, data_UserFile, destino + "-data_UserFile", "5", ";", idIndex),
+//          Array[String](minClusters.toString, maxClusters.toString, waveformFile, destino + "-waveformFile", "21", ",", idIndex),
+//          Array[String](minClusters.toString, maxClusters.toString, relaxFile, destino + "-relaxFile", "12", "\t", idIndex),
+//          Array[String](minClusters.toString, maxClusters.toString, wineQualityWhite, destino + "-wineQualityWhite", "11", ";", idIndex),
+//          Array[String](minClusters.toString, maxClusters.toString, wineQualityRed, destino + "-wineQualityRed", "11", ";", idIndex),
+//          Array[String](minClusters.toString, maxClusters.toString, biodegFile, destino + "-biodegFile", "41", ";", idIndex),
+//          Array[String](minClusters.toString, maxClusters.toString, breastTissueFile, destino + "-breastTissueFile", "0", ";", idIndex),
+//          Array[String](minClusters.toString, maxClusters.toString, cloudFile, destino + "-cloudFile", "0", ";", idIndex),
+//          Array[String](minClusters.toString, maxClusters.toString, diabetesFile, destino + "-diabetesFile", "19", ",", idIndex),
+//          Array[String](minClusters.toString, maxClusters.toString, ecoliFile, destino + "-ecoliFile", "8", ";", "0"),
+//          Array[String](minClusters.toString, maxClusters.toString, faultsFile, destino + "-faultsFile", "11", ";", idIndex),
+//          Array[String]("2", "4", airlinesFile, destino + "-airlinesFile", "7", ",", idIndex),
+//          Array[String]("2", "4", bankmarketingFile, destino + "-bankmarketingFile", "16", ",", idIndex),
+//          Array[String](minClusters.toString, maxClusters.toString, carFile, destino + "-carFile", "1", ",", idIndex),
+//          Array[String]("2", "4", electricityFile, destino + "-electricityFile", "8", ",", idIndex),
+          //Array[String](minClusters.toString, maxClusters.toString, kddFile, destino + "-kddFile", "0", ",", idIndex),
+          Array[String](minClusters.toString, maxClusters.toString, ozoneFile, destino + "-ozoneFile", "72", ",", idIndex),
+          Array[String](minClusters.toString, maxClusters.toString, pendigitsFile, destino + "-pendigitsgFile", "16", ",", idIndex),
+          Array[String](minClusters.toString, maxClusters.toString, pokerhandFile, destino + "-pokerhandFile", "10", ",", idIndex),
+          Array[String](minClusters.toString, maxClusters.toString, spambaseFile, destino + "-spambaseFile", "57", ",", idIndex),
+          Array[String](minClusters.toString, maxClusters.toString, wholesaleFile, destino + "-wholesaleFile", "0", ",", idIndex),
+          Array[String]("10", "20", vowelFile, destino + "-vowelFile", "13", ";", idIndex),
+          Array[String](minClusters.toString, maxClusters.toString, urbanFile, destino + "-urbanFile", "0", ",", idIndex),
+          Array[String](minClusters.toString, maxClusters.toString, spamFile, destino + "-spamFile", "57", ",", idIndex),
+          Array[String](minClusters.toString, maxClusters.toString, spectometerFile, destino + "-spectometerFile", "1", "\t", "0"),
+          Array[String](minClusters.toString, maxClusters.toString, segmentFile, destino + "-segmentFile", "19", " ", idIndex),
+          Array[String](minClusters.toString, maxClusters.toString, satimageFile, destino + "-satimageFile", "36", " ", idIndex),
+          Array[String](minClusters.toString, maxClusters.toString, optdigits, destino + "-optdigits", "64", ",", idIndex),
+          Array[String]("10", "20", movementFile, destino + "-movementFile", "90", ",", idIndex),
+          Array[String]("20", "30", letterFile, destino + "-letterFile", "0", ",", idIndex),
+          Array[String]("30", "40", leafFile, destino + "-leafFile", "0", ",", idIndex),
+          Array[String](minClusters.toString, maxClusters.toString, gestureFile, destino + "-gestureFile", "19", ",", "0"),
+          Array[String](minClusters.toString, maxClusters.toString, glassFile, destino + "-glassFile", "10", ",", "0"),
+          Array[String](minClusters.toString, maxClusters.toString, forestFile, destino + "-forestFile", "0", ",", idIndex)
+        )
+//            val argumentsList = List(
+//              Array[String]("12", "15", wineQuality, destino + "-winequality", "11", ";", idIndex))
 
     //val arguments = Array[String](minClusters.toString, maxClusters.toString, origen, destino, classIndex.toString, delimiter)
     argumentsList.foreach {

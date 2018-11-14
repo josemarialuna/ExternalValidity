@@ -1,7 +1,7 @@
 import es.us.spark.mllib.Utils
 import es.us.spark.mllib.clustering.validation.ExternalValidation
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.ml.clustering.BisectingKMeans
+import org.apache.spark.ml.clustering.{BisectingKMeans, KMeans}
 import org.apache.spark.ml.feature.VectorAssembler
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.types.DoubleType
