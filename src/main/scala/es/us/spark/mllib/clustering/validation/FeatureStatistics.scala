@@ -84,7 +84,7 @@ object FeatureStatistics extends Logging {
 
     dfwithSum.unpersist()
 
-    res / (numClusters - 1)
+    res
 
   }
 
@@ -139,7 +139,7 @@ object FeatureStatistics extends Logging {
     * @param numClusters Total umber of clusters
     * @example calculateTotalChi(dataRow, dataColumn, 3)
     */
-  def calculateTotalChi(dataRow: DataFrame, dataColumn: DataFrame, numClusters: Int): (Double, Double) = {
+  def calculateTotalChi(dataRow: DataFrame, dataColumn: DataFrame, numClusters: Int): (Double, Double, Double) = {
     logInfo(s"Calculating chi square by cluster..")
     val rowsChi = getSquaredChi(dataRow, numClusters)
     logInfo("Done!")
@@ -148,8 +148,28 @@ object FeatureStatistics extends Logging {
     val columnsChi = getSquaredChi(dataColumn, numClusters)
     logInfo("Done!")
 
-    println(s"$rowsChi + $columnsChi")
-    (rowsChi.toDouble, columnsChi.toDouble)
+    val num_cols = dataColumn.columns.length
+    val num_rows = dataColumn.count().toInt
+
+    var chi1_max = 0.0
+    var chi2_max = 0.0
+
+    if (num_rows < num_cols) {
+      chi1_max = 100 * num_rows * (num_rows - 1)
+      chi2_max = 100 * num_rows * (num_cols - 1)
+    } else {
+      chi1_max = 100 * num_cols * (num_rows - 1)
+      chi2_max = 100 * num_cols * (num_cols - 1)
+    }
+
+    val chi1_norm = rowsChi / chi1_max
+    val chi2_norm = columnsChi / chi2_max
+
+
+    val trueChi = chi1_norm + chi2_norm - Math.abs(chi1_norm - chi2_norm)
+
+      println(s"$rowsChi + $columnsChi => $trueChi")
+    (rowsChi.toDouble, columnsChi.toDouble, trueChi)
   }
 
   /**

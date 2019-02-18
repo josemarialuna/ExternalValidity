@@ -1,7 +1,7 @@
 import es.us.spark.mllib.Utils
 import es.us.spark.mllib.clustering.validation.ExternalValidation
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.ml.clustering.{BisectingKMeans, KMeans}
+import org.apache.spark.ml.clustering.{BisectingKMeans, GaussianMixture, KMeans}
 import org.apache.spark.ml.feature.VectorAssembler
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.types.DoubleType
@@ -105,8 +105,8 @@ object MainLiterature {
       //df_kmeans.show()
 
       //val clusteringResult = new KMeans()
-      val clusteringResult = new BisectingKMeans()
-        //val clusteringResult = new GaussianMixture()
+      //val clusteringResult = new BisectingKMeans()
+        val clusteringResult = new GaussianMixture()
         .setK(numClusters)
         .setSeed(1L)
         .setMaxIter(numIterations)
