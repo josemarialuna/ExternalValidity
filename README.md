@@ -1,5 +1,5 @@
 # External Clustering Validity Indices
-This package contains the code for executing 13 external clustering validity indices in Spark. The package includes the following índices:
+This package contains the code for executing 15 external clustering validity indices in Spark. The package includes the following índices:
 * **Chi Index**
 * Entropy
 * Purity
@@ -13,6 +13,11 @@ This package contains the code for executing 13 external clustering validity ind
 * Fowlkes-Mallows
 * Hubert
 * Minkowski
+* Criterion H
+* CSI
+* PSI
+
+Chi Index takes a value in [0, 2], where 0 is given by the worst clustering solution, and 2 is the best value that Chi Index can achieve. 
 
 The cluster indices can be executed using K-means and Bisecting K-Means from Spark MLlib, and Linkage method.
 
@@ -70,7 +75,7 @@ By default, the results are saved in the same a folder than the dataset. The res
 * [DATETIME]-[DATESETNAME]-kmeansRes-[K]Results: It's the folder that contains the results of the clustering result as "class	prediction".
 * [DATETIME]-[DATESETNAME]-[K]-class-DFClusters: This folder contains the results of the contingency table with the relative values that sums 100% by rows.
 * [DATETIME]-[DATESETNAME]-[K]-class-DFFeatures: This folder contains the results of the contingency table with the relative values that sums 100% by columns.
-* [DATETIME]-[DATESETNAME]-loopingchi: This folder contains the results of the chi values for each K.
+* [DATETIME]-[DATESETNAME]-loopingchi: This folder contains the results of the chi values for each K in 3 columns: Chi-squared value by row; Chi-squared value by column; and the Chi Index value.
 
 This data can be copy-pasted directly into an spreadsheet to be visualized.
 
@@ -78,6 +83,8 @@ For the iris dataset, the results are following:
 ![Chi index results for Iris for k=[2,10]](https://github.com/josemarialuna/ExternalValidity/blob/master/ChiRes.PNG)
 
 ![Contingency tables for k=3](https://github.com/josemarialuna/ExternalValidity/blob/master/Chitables.PNG)
+
+
 
 
 ## Contributors
