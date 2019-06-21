@@ -1,5 +1,5 @@
 # External Clustering Validity Indices
-This package contains the code for executing 15 external clustering validity indices in Spark. The package includes the following índices:
+This package contains the code for executing 15 external clustering validity indices in Spark. The package includes the following indices:
 * **Chi Index**
 * Entropy
 * Purity
@@ -20,6 +20,8 @@ This package contains the code for executing 15 external clustering validity ind
 Chi Index takes a value in [0, 2], where 0 is given by the worst clustering solution, and 2 is the best value that Chi Index can achieve. 
 
 The cluster indices can be executed using K-means and Bisecting K-Means from Spark MLlib, and Linkage method.
+
+Please, cite as: Luna-Romera JM, Martínez-Ballesteros M, García-Gutiérrez J, Riquelme JC. External clustering validity index based on chi-squared statistical test. Information Sciences (2019) 487: 1-17. https://doi.org/10.1016/j.ins.2019.02.046. (http://www.sciencedirect.com/science/article/pii/S0020025519301550)
 
 ## Getting Started
 
@@ -96,5 +98,5 @@ For the iris dataset, the results are following:
 
 ## References
 
-TBA
+[1] Luna-Romera JM, Martínez-Ballesteros M, García-Gutiérrez J, Riquelme JC. External clustering validity index based on chi-squared statistical test. Information Sciences (2019) 487: 1-17. https://doi.org/10.1016/j.ins.2019.02.046. (http://www.sciencedirect.com/science/article/pii/S0020025519301550)
 
