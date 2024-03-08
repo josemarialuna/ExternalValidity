@@ -99,10 +99,10 @@ For the iris dataset, the results are following:
 
 ## Contributors
 
-* José María Luna-Romera - (main contributor and maintainer).
-* María Martínez-Ballesteros
+* **José María Luna-Romera** - [Personal site](https://josemarialuna.com/)
+* María Martínez-Ballesteros - [Research Group](https://grupo.us.es/minerva/)
 * Jorge García-Gutiérrez
-* José C. Riquelme Santos
+* José C. Riquelme 
 
 ## Cite this
 Please, cite as: Luna-Romera JM, Martínez-Ballesteros M, García-Gutiérrez J, Riquelme JC. External clustering validity index based on chi-squared statistical test. Information Sciences (2019) 487: 1-17. https://doi.org/10.1016/j.ins.2019.02.046. (http://www.sciencedirect.com/science/article/pii/S0020025519301550)
@@ -136,4 +136,4 @@ keywords = {Clustering analysis, External validity indices, Comparing clusters, 
 [license-shield]: https://img.shields.io/github/license/josemarialuna/ExternalValidity.svg?style=for-the-badge
 [license-url]: https://github.com/josemarialuna/ExternalValidity/blob/master/LICENSE.txt
 [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
-[linkedin-url]: https://linkedin.com/in/josemarialuna
+[linkedin-url]: https://josemarialuna.com
