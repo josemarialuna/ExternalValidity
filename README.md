@@ -37,6 +37,8 @@ Please, cite as: Luna-Romera JM, Martínez-Ballesteros M, García-Gutiérrez J, 
 
 The package is ready to be used. You only have to download it and import it into your workspace. The package includes iris dataset as example and it can be used with the main test class.
 
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 ## Running the tests
 MainExternalTest class has been configured for being executed in a laptop. You can execute this class directly but there are some variables that you should be noticed:
 * val numIterations = Maximum number of iterations for the clustering algorithm.
@@ -80,6 +82,8 @@ This application can be used with KMeans, GaussianMixture, LDA and BisectingKMea
     .setFeaturesCol("features")
 ```
 
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 ## Results
 By default, the results are saved in the same a folder than the dataset. The results are saved in several folders:
 * [DATETIME]-[DATESETNAME]-kmeansRes-[K]Results: It's the folder that contains the results of the clustering result as "class	prediction".
@@ -95,7 +99,7 @@ For the iris dataset, the results are following:
 ![Contingency tables for k=3](https://github.com/josemarialuna/ExternalValidity/blob/master/Chitables.PNG)
 
 
-
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ## Contributors
 
