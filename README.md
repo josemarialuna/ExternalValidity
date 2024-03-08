@@ -5,7 +5,7 @@
 [![Stargazers][stars-shield]][stars-url]
 [![Issues][issues-shield]][issues-url]
 [![MIT License][license-shield]][license-url]
-![Static Badge](https://img.shields.io/badge/Personal%20Site-555?style=for-the-badge&link=https%3A%2F%2Fjosemarialuna.com)
+[![Personal][personal-shield]][personal-url]
 
 This package contains the code for executing 15 external clustering validity indices in Spark. Chi index Python implementation can be found in this repository: [Chi Index Python](https://github.com/josemarialuna/Chi-Index) . This package includes the following indices in Scala:
 * **Chi Index**
@@ -135,3 +135,5 @@ keywords = {Clustering analysis, External validity indices, Comparing clusters, 
 [issues-url]: https://github.com/josemarialuna/ExternalValidity/issues
 [license-shield]: https://img.shields.io/github/license/josemarialuna/ExternalValidity.svg?style=for-the-badge
 [license-url]: https://github.com/josemarialuna/ExternalValidity/blob/master/LICENSE.txt
+[personal-shield]: https://img.shields.io/badge/Personal%20Site-555?style=for-the-badge
+[personal-url]: https://josemarialuna.com
