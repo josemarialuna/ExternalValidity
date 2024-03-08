@@ -1,5 +1,13 @@
+<a name="readme-top"></a>
 # External Clustering Validity Indices
-This package contains the code for executing 15 external clustering validity indices in Spark. The package includes the following indices:
+[![Contributors][contributors-shield]][contributors-url]
+[![Forks][forks-shield]][forks-url]
+[![Stargazers][stars-shield]][stars-url]
+[![Issues][issues-shield]][issues-url]
+[![MIT License][license-shield]][license-url]
+[![LinkedIn][linkedin-shield]][linkedin-url]
+
+This package contains the code for executing 15 external clustering validity indices in Spark. Chi index Python implementation can be found in this repository: [Chi Index Python](https://github.com/josemarialuna/Chi-Index) . This package includes the following indices in Scala:
 * **Chi Index**
 * Entropy
 * Purity
@@ -96,9 +104,8 @@ For the iris dataset, the results are following:
 * Jorge García-Gutiérrez
 * José C. Riquelme Santos
 
-## References
-
-[1] Luna-Romera JM, Martínez-Ballesteros M, García-Gutiérrez J, Riquelme JC. External clustering validity index based on chi-squared statistical test. Information Sciences (2019) 487: 1-17. https://doi.org/10.1016/j.ins.2019.02.046. (http://www.sciencedirect.com/science/article/pii/S0020025519301550)
+## Cite this
+Please, cite as: Luna-Romera JM, Martínez-Ballesteros M, García-Gutiérrez J, Riquelme JC. External clustering validity index based on chi-squared statistical test. Information Sciences (2019) 487: 1-17. https://doi.org/10.1016/j.ins.2019.02.046. (http://www.sciencedirect.com/science/article/pii/S0020025519301550)
 ```
 @article{LUNAROMERA20191,
 title = {External clustering validity index based on chi-squared statistical test},
@@ -113,3 +120,20 @@ author = {José María Luna-Romera and María Martínez-Ballesteros and Jorge Ga
 keywords = {Clustering analysis, External validity indices, Comparing clusters, Big data}
 }
 ```
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+<!-- MARKDOWN LINKS & IMAGES -->
+<!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
+[contributors-shield]: https://img.shields.io/github/contributors/josemarialuna/ExternalValidity.svg?style=for-the-badge
+[contributors-url]: https://github.com/josemarialuna/ExternalValidity/graphs/contributors
+[forks-shield]: https://img.shields.io/github/forks/josemarialuna/ExternalValidity.svg?style=for-the-badge
+[forks-url]: https://github.com/josemarialuna/ExternalValidity/network/members
+[stars-shield]: https://img.shields.io/github/stars/josemarialuna/ExternalValidity.svg?style=for-the-badge
+[stars-url]: https://github.com/josemarialuna/ExternalValidity/stargazers
+[issues-shield]: https://img.shields.io/github/issues/josemarialuna/ExternalValidity.svg?style=for-the-badge
+[issues-url]: https://github.com/josemarialuna/ExternalValidity/issues
+[license-shield]: https://img.shields.io/github/license/josemarialuna/ExternalValidity.svg?style=for-the-badge
+[license-url]: https://github.com/josemarialuna/ExternalValidity/blob/master/LICENSE.txt
+[linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
+[linkedin-url]: https://linkedin.com/in/josemarialuna
